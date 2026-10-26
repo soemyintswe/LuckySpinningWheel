@@ -30,7 +30,7 @@
 1. Firebase Console တွင် project ဖန်တီးပါ။ Authentication > Sign-in method မှ Email/Password နှင့် Google provider ဖွင့်ပါ။ Google provider တွင် support email သတ်မှတ်ပြီး Authentication settings > Authorized domains တွင် local/production domain များထည့်ပါ။
 2. Firestore database နှင့် Storage bucket ဖန်တီးပါ။ Project settings > Your apps မှ Web app ဖန်တီး၍ config ယူပါ။
 3. `.env.example` ကို `.env` အဖြစ်ကူးပြီး Firebase Web config (`VITE_FIREBASE_*`) တန်ဖိုးများဖြည့်ပါ။ `.env` ကို GitHub ပေါ် မတင်ပါနှင့်။
-4. Root project မှ `npm ci`၊ ထို့နောက် `functions` folder မှ `npm ci` လုပ်ပါ။ Firebase CLI ကို install/login ဝင်ပြီး `firebase use --add` ဖြင့် project ကိုရွေးပါ။
+4. Root project မှ `npm ci`၊ ထို့နောက် `functions` folder မှ `npm ci` လုပ်ပါ။ Firebase CLI ကို `soemyintswe@gmail.com` ဖြင့် login ဝင်ပြီး `.firebaserc.example` ကို `.firebaserc` အဖြစ်ကူးပါ (`.firebaserc` သည် Git မှ ignore လုပ်ထားသည်)။ `luckydraw-mksdev` project ကို ရွေး/ဖန်တီးပြီး `firebase use luckydraw-mksdev` လုပ်ပါ။
 5. Project owner သည် Google ဖြင့် (သို့) Email ဖြင့် ပထမ Admin account ကို register လုပ်ပြီး Authentication Users မှ UID ယူပါ။ Firestore Console တွင် `admins/{UID}` document ကို project owner အဖြစ် ကိုယ်တိုင်ဖန်တီးပါ။ Rules က client-side Admin promotion ကို တားထားသည်။
 6. `firebase deploy --only firestore:rules,storage,functions` ဖြင့် backend rules/functions တင်ပါ။ `npm run dev` ဖြင့် local app စပါ။
 7. Build စစ်ရန် `npm run build`; Functions syntax စစ်ရန် `node --check functions/index.js`; dependency audit စစ်ရန် root နှင့် `functions` folder နှစ်ခုစလုံးတွင် `npm audit --omit=dev` လုပ်ပါ။
