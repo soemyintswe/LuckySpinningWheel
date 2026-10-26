@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import { initializeApp } from 'firebase/app'
 import { createUserWithEmailAndPassword, FacebookAuthProvider, getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithEmailAndPassword, signInWithPopup, signOut, updateProfile } from 'firebase/auth'
-import { addDoc, collection, doc, getDoc, getDocs, getFirestore, onSnapshot, orderBy, query, runTransaction, serverTimestamp, setDoc, Timestamp, updateDoc, where, writeBatch } from 'firebase/firestore'
+import { addDoc, collection, doc, getDocs, getFirestore, onSnapshot, orderBy, query, runTransaction, serverTimestamp, setDoc, Timestamp, updateDoc, where, writeBatch } from 'firebase/firestore'
 import { Activity, ArrowDownLeft, ArrowUpRight, Award, Banknote, Bell, Check, ChevronDown, CircleHelp, Clock3, Gift, Heart, LayoutDashboard, LogOut, Menu, Plus, Search, Settings, Shield, Sparkles, Ticket, Users, Wallet, X } from 'lucide-react'
 import './style.css'
 
@@ -34,7 +34,31 @@ function App() {
 
   useEffect(()=>{const timer=setInterval(()=>setClockTick(Date.now()),30000);return()=>clearInterval(timer)},[])
 
-  useEffect(() => { if (!auth) return; let stopUser=()=>{},stopAdmin=()=>{}; const stopAuth=onAuthStateChanged(auth, async current => { stopUser();stopAdmin();setUser(current);if(!current){setProfile(null);setAdminCheck('signed-out');setPage('overview');setMenu(false);setModal(m=>m==='account'?'auth':m);return};const userRef=doc(db,'users',current.uid),adminRef=doc(db,'admins',current.uid),[userSnap,adminSnap]=await Promise.all([getDoc(userRef),getDoc(adminRef)]);if(!userSnap.exists()&&!adminSnap.exists())await setDoc(userRef,{name:current.displayName||'',email:current.email||'',phone:'',contact:'',role:'participant',approved:false,status:'active',pointsBalance:0,createdAt:serverTimestamp()},{merge:true});let latestProfile=userSnap.exists()?userSnap.data():null,hasAdmin=adminSnap.exists();setAdminCheck(hasAdmin?'found':'missing');const publish=()=>setProfile(hasAdmin?{...(latestProfile||{}),role:'admin',approved:true}:latestProfile);stopUser=onSnapshot(userRef,snap=>{latestProfile=snap.exists()?snap.data():null;publish()},()=>setProfile(null));stopAdmin=onSnapshot(adminRef,snap=>{hasAdmin=snap.exists();setAdminCheck(hasAdmin?'found':'missing');publish()},error=>{hasAdmin=false;setAdminCheck(`error:${error.code||'unknown'}`);publish()}) });return()=>{stopAuth();stopUser();stopAdmin()} }, [])
+  useEffect(() => {
+    if (!auth) return
+    let stopUser=()=>{}, stopAdmin=()=>{}, authGeneration=0
+    const stopAuth=onAuthStateChanged(auth, current => {
+      const generation=++authGeneration
+      stopUser(); stopAdmin(); setUser(current)
+      if (!current) { setProfile(null); setAdminCheck('signed-out'); setPage('overview'); setMenu(false); setModal(m=>m==='account'?'auth':m); return }
+      setProfile(null); setAdminCheck('checking')
+      const userRef=doc(db,'users',current.uid), adminRef=doc(db,'admins',current.uid)
+      let latestProfile=null, hasAdmin=false, userSeen=false, adminSeen=false, profileCreationStarted=false
+      const publish=()=>{ if(generation!==authGeneration)return; if(userSeen&&adminSeen)setProfile(hasAdmin?{...(latestProfile||{}),role:'admin',approved:true}:latestProfile) }
+      stopUser=onSnapshot(userRef, snap=>{
+        if(generation!==authGeneration)return
+        userSeen=true; latestProfile=snap.exists()?snap.data():null
+        if(!snap.exists()&&!profileCreationStarted){profileCreationStarted=true;setDoc(userRef,{name:current.displayName||'',email:current.email||'',phone:'',contact:'',role:'participant',approved:false,status:'active',pointsBalance:0,createdAt:serverTimestamp()},{merge:true}).catch(error=>setAdminCheck(`error:${error.code||'profile-write'}`))}
+        publish()
+      },error=>{if(generation===authGeneration){userSeen=true;setAdminCheck(`error:${error.code||'profile-read'}`);publish()}})
+      stopAdmin=onSnapshot(adminRef, snap=>{
+        if(generation!==authGeneration)return
+        adminSeen=true; hasAdmin=snap.exists()&&snap.data()?.role==='admin'
+        setAdminCheck(hasAdmin?'found':'missing'); publish()
+      },error=>{if(generation===authGeneration){adminSeen=true;hasAdmin=false;setAdminCheck(`error:${error.code||'admin-read'}`);publish()}})
+    })
+    return()=>{authGeneration++;stopAuth();stopUser();stopAdmin()}
+  }, [])
   useEffect(() => { if (!db) return; const unsubs = [
     onSnapshot(query(collection(db,'raffles'),orderBy('createdAt','desc')),s=>setRaffles(s.docs.map(d=>({id:d.id,...d.data()}))),()=>{}),
     onSnapshot(query(collection(db,'winners'),orderBy('createdAt','desc')),s=>setWinners(s.docs.map(d=>({id:d.id,...d.data()}))),()=>{}),
