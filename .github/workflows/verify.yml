@@ -1,0 +1,29 @@
+name: Verify
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: npm audit --omit=dev
+      - run: npm ci
+        working-directory: functions
+      - run: node --check index.js
+        working-directory: functions
+      - run: npm audit --omit=dev
+        working-directory: functions
