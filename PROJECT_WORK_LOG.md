@@ -342,3 +342,10 @@
 - Source inspection shows it is a static `.workspace` div with a decorative `ChevronDown`; there is no workspace-switching state or action. The arrow falsely suggests the user can select another workspace.
 - Remove the decorative arrow and keep the area as a clear static label. Build, deploy Hosting, verify the live app, and publish the change. No Firebase data or rules changes are needed.
 - Removed the fake dropdown chevron; the static workspace label now has a descriptive title. `npm run build` and `git diff --check` passed, Hosting was deployed, and the live page returned HTTP 200 with bundle `index-sI1JZMW-.js`. No rules or Firestore data changed.
+
+### Iteration 24 — wheel music, spin effects, prize fanfare and celebration animation (2026-10-26)
+
+- User requests an optional background tune during the draw, a wheel-turning sound, distinct fanfares for first/second/third prizes, and GIF-like celebratory motion.
+- Implement browser-native Web Audio tones and CSS celebration animation, avoiding remote copyrighted sound files and external asset hosting. Provide a visible sound toggle with persisted preference; start audio only from the user's wheel-click gesture to comply with browser autoplay restrictions. Stop looping audio after a draw and select the fanfare from prize tier. Include reduced-motion support and document browser audio behavior.
+- Build and diff-check, deploy Hosting, check live response, and publish source, user guide, and work log.
+- Added browser-synthesized low-volume background melody and wheel ticks during spins, rank-specific first/second/third prize fanfares, a remembered sound toggle, and CSS confetti/wheel celebration animation. Sound begins on the wheel click (browser autoplay policy), can be toggled in the wheel modal, and respects reduced-motion settings. Updated the Burmese user guide. `npm run build` and `git diff --check` passed; Hosting deployed and live URL returned HTTP 200 with `index-DQICFbm7.js` and `index-Bciiv6I2.css`. No Firebase data or rules changed.

@@ -1,9 +1,9 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import { initializeApp } from 'firebase/app'
 import { createUserWithEmailAndPassword, FacebookAuthProvider, getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithEmailAndPassword, signInWithPopup, signOut, updateProfile } from 'firebase/auth'
 import { addDoc, collection, doc, getDoc, getDocs, getFirestore, onSnapshot, orderBy, query, runTransaction, serverTimestamp, setDoc, Timestamp, updateDoc, where, writeBatch } from 'firebase/firestore'
-import { Activity, ArrowDownLeft, ArrowUpRight, Award, Banknote, Bell, Check, ChevronDown, CircleHelp, Clock3, Gift, Heart, LayoutDashboard, LogOut, Menu, Pencil, Plus, Search, Settings, Shield, Sparkles, Ticket, Users, Wallet, X } from 'lucide-react'
+import { Activity, ArrowDownLeft, ArrowUpRight, Award, Banknote, Bell, Check, ChevronDown, CircleHelp, Clock3, Gift, Heart, LayoutDashboard, LogOut, Menu, Pencil, Plus, Search, Settings, Shield, Sparkles, Ticket, Users, Volume2, VolumeX, Wallet, X } from 'lucide-react'
 import './style.css'
 
 const config = { apiKey: import.meta.env.VITE_FIREBASE_API_KEY, authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN, projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID, storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET, messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID, appId: import.meta.env.VITE_FIREBASE_APP_ID }
@@ -24,6 +24,9 @@ function App() {
   const [page, setPage] = useState('overview'), [modal, setModal] = useState(''), [menu, setMenu] = useState(false), [toast, setToast] = useState(''), [search, setSearch] = useState(''), [loading, setLoading] = useState(false), [clockTick, setClockTick] = useState(Date.now())
   const [authMode, setAuthMode] = useState('login'), [authError, setAuthError] = useState('')
   const [wheelSpinning, setWheelSpinning] = useState(false), [wheelResult, setWheelResult] = useState(null), [wheelTarget, setWheelTarget] = useState(null)
+  const [wheelSoundOn,setWheelSoundOn]=useState(()=>{try{return localStorage.getItem('luckywheel-sound')!=='off'}catch{return true}}),[wheelAwardTone,setWheelAwardTone]=useState('')
+  const audioRef=useRef(null),wheelAudioTimer=useRef(null),soundOnRef=useRef(wheelSoundOn)
+  soundOnRef.current=wheelSoundOn
   const [editingRaffle, setEditingRaffle] = useState(null), [editRestricted, setEditRestricted] = useState(false)
   const [form, setForm] = useState({ name:'', email:'', phone:'', contact:'', telegram:'', password:'', role:'participant' })
   const [raffleForm, setRaffleForm] = useState({ title:'', description:'', entryMode:'free', ticketPrice:'', pointsPerChance:'1', currency:'MMK', maxTickets:'100', maxTicketsPerUser:'1', reservedTicketCount:0, drawController:'both', participantSpinMode:'each', adminSpinMode:'each', pointsRemainderPolicy:'carry', openAt:'', drawDate:'', recurrenceCount:'1', recurrenceDays:'7', cashPool:'1000000', consolationCount:'0', consolationMode:'equal', consolationFixedAmount:'', bankName:'', accountName:'', accountNumber:'', walletName:'', walletPhone:'', imageUrl:'', prizes:[{ name:'ပထမဆု', item:'', value:'', quantity:'1', valueType:'cash', imageUrl:'' },{ name:'ဒုတိယဆု', item:'', value:'', quantity:'1', valueType:'cash', imageUrl:'' },{ name:'တတိယဆု', item:'', value:'', quantity:'1', valueType:'cash', imageUrl:'' }] })
@@ -82,6 +85,50 @@ function App() {
   const fixedCashAwards=raffleForm.prizes.reduce((n,p)=>n+(p.valueType==='cash'?Math.max(0,Number(p.value||0))*Math.max(1,Number(p.quantity||1)):0),0)
   const consolationCountPreview=Math.max(0,Number(raffleForm.consolationCount||0))
   const consolationAvailable=Math.max(0,Number(raffleForm.cashPool||0)-fixedCashAwards)
+  function getAudio(){
+    if(!audioRef.current){const AudioContextClass=window.AudioContext||window.webkitAudioContext;if(AudioContextClass)audioRef.current=new AudioContextClass()}
+    return audioRef.current
+  }
+  function playAudioTone(frequency,when=0,duration=.16,volume=.025,wave='sine'){
+    const context=getAudio();if(!context)return
+    const start=Math.max(context.currentTime,when),osc=context.createOscillator(),gain=context.createGain()
+    osc.type=wave;osc.frequency.setValueAtTime(frequency,start);gain.gain.setValueAtTime(.0001,start);gain.gain.exponentialRampToValueAtTime(volume,start+.018);gain.gain.exponentialRampToValueAtTime(.0001,start+duration)
+    osc.connect(gain);gain.connect(context.destination);osc.start(start);osc.stop(start+duration+.03)
+  }
+  function startWheelAudio(force=false){
+    if(!wheelSoundOn&&!force)return
+    const context=getAudio();if(!context)return
+    context.resume().catch(()=>{})
+    clearInterval(wheelAudioTimer.current)
+    let beat=0
+    const melody=[523.25,659.25,783.99,659.25,587.33,698.46,880,698.46]
+    wheelAudioTimer.current=setInterval(()=>{
+      if(!audioRef.current)return
+      const now=audioRef.current.currentTime
+      playAudioTone(beat%2?920:740,now,.055,.018,'triangle')
+      if(beat%4===0)playAudioTone(melody[(beat/4)%melody.length],now,.3,.012,'sine')
+      beat++
+    },180)
+  }
+  function finishWheelAudio(results=[]){
+    clearInterval(wheelAudioTimer.current);wheelAudioTimer.current=null
+    const winners=results.filter(result=>result.won)
+    const rank=result=>{const name=safe(result.prizeName).toLowerCase();if(name.includes('ပထမ')||name.includes('first')||name.includes('1st'))return 4;if(name.includes('ဒုတိယ')||name.includes('second')||name.includes('2nd'))return 3;if(name.includes('တတိယ')||name.includes('third')||name.includes('3rd'))return 2;return 1}
+    const winner=winners.sort((a,b)=>rank(b)-rank(a))[0]
+    const toneClass=winner?({4:'first',3:'second',2:'third',1:'consolation'}[rank(winner)]||'consolation'):''
+    setWheelAwardTone(toneClass)
+    if(!winner||!soundOnRef.current)return
+    const context=getAudio();if(!context)return;context.resume().catch(()=>{})
+    const tune=toneClass==='first'?[523.25,659.25,783.99,1046.5,1318.5]:toneClass==='second'?[440,554.37,659.25,880]:toneClass==='third'?[392,493.88,587.33,783.99]:[440,554.37,659.25]
+    tune.forEach((frequency,index)=>playAudioTone(frequency,context.currentTime+index*.14,.34,toneClass==='first'?.045:.032,'triangle'))
+  }
+  function toggleWheelSound(){
+    const next=!wheelSoundOn;setWheelSoundOn(next)
+    soundOnRef.current=next
+    try{localStorage.setItem('luckywheel-sound',next?'on':'off')}catch{}
+    if(next&&wheelSpinning)startWheelAudio(true)
+    if(!next){clearInterval(wheelAudioTimer.current);wheelAudioTimer.current=null;setWheelAwardTone('')}
+  }
   const consolationEach=raffleForm.consolationMode==='fixed'?Math.floor(Number(raffleForm.consolationFixedAmount||0)):consolationCountPreview?Math.floor(consolationAvailable/consolationCountPreview):0
   const consolationRemainder=raffleForm.consolationMode==='fixed'?0:consolationCountPreview?consolationAvailable%consolationCountPreview:consolationAvailable
   const cashBalance = ledger.reduce((n,x)=>n+(x.assetType==='cash'?(x.direction==='in'?1:-1)*Number(x.amount||0):0),0)
@@ -263,7 +310,7 @@ function App() {
     return snapshot.docs.map(d=>({id:d.id,...d.data()}))
   }
   async function spin(raffle,entryId=''){
-    setWheelTarget(raffle);setModal('wheel');setWheelResult(null);setWheelSpinning(true);setLoading(true)
+    setWheelTarget(raffle);setModal('wheel');setWheelResult(null);setWheelAwardTone('');setWheelSpinning(true);setLoading(true);startWheelAudio()
     const results=[]
     try{
       const slots=await getPrizeSlots(raffle)
@@ -273,7 +320,7 @@ function App() {
       const batchAll=isAdmin?(raffle.adminSpinMode||'each')==='all':(raffle.participantSpinMode||'each')==='all'
       const target=isAdmin?Math.min(batchAll?candidates.reduce((n,p)=>n+Number(p.ticketCount||0)-Number(p.spinsUsed||0),0):1,Math.max(0,Number(raffle.ticketCount||0)-Number(raffle.drawSpinsUsed||0))):(batchAll?Math.max(0,Number(selectedEntry.ticketCount||0)-Number(selectedEntry.spinsUsed||0)):1)
       if(target<1)throw Error('ကံစမ်းခွင့်ကျန်သည့် အတည်ပြုစာရင်း မရှိပါ။')
-      if(batchAll&&target>1&&!window.confirm(`${target} ကြိမ်ကို တစ်ခုပြီးတစ်ခု အလိုအလျောက်လှည့်ပါမည်။ မဲတစ်ကြိမ်စီသည် ပြန်မရနိုင်ပါ။ ဆက်လုပ်မလား။`)){setModal('');setWheelSpinning(false);return}
+      if(batchAll&&target>1&&!window.confirm(`${target} ကြိမ်ကို တစ်ခုပြီးတစ်ခု အလိုအလျောက်လှည့်ပါမည်။ မဲတစ်ကြိမ်စီသည် ပြန်မရနိုင်ပါ။ ဆက်လုပ်မလား။`)){finishWheelAudio([]);setModal('');setWheelSpinning(false);return}
       for(let turn=0;turn<target;turn++){
         let entry=selectedEntry
         if(isAdmin){const total=candidates.reduce((n,p)=>n+Math.max(0,Number(p.ticketCount||0)-Number(p.spinsUsed||0)),0);if(!total)break;let pick=randomInt(total);entry=candidates.find(p=>(pick-=Math.max(0,Number(p.ticketCount||0)-Number(p.spinsUsed||0)))<0)}
@@ -299,8 +346,8 @@ function App() {
         if(isAdmin){const person=candidates.find(p=>p.id===entry.id);if(person)person.spinsUsed=Number(person.spinsUsed||0)+1}
         else selectedEntry={...selectedEntry,spinsUsed:Number(selectedEntry.spinsUsed||0)+1}
       }
-      await new Promise(resolve=>setTimeout(resolve,1800));setWheelResult({results});setWheelSpinning(false)
-    }catch(e){setWheelSpinning(false);if(results.length){setWheelResult({results});notify(`${results.length} ကြိမ်ပြီးနောက် ရပ်သွားသည်: ${e.message}`)}else{setModal('');notify(e.message)}}finally{setLoading(false)}
+      await new Promise(resolve=>setTimeout(resolve,1800));finishWheelAudio(results);setWheelResult({results});setWheelSpinning(false)
+    }catch(e){finishWheelAudio(results);setWheelSpinning(false);if(results.length){setWheelResult({results});notify(`${results.length} ကြိမ်ပြီးနောက် ရပ်သွားသည်: ${e.message}`)}else{setModal('');notify(e.message)}}finally{setLoading(false)}
   }
   async function setParticipantStatus(p,status){
     if(!isAdmin)return
@@ -372,7 +419,7 @@ function App() {
     </>:<section className="signed-out-home"><div className="signed-out-brand"><span className="brand-mark"><Sparkles size={23}/></span><span>Lucky<span className="brand-light">Wheel</span><small>ကံစမ်းမဲ စီမံခန့်ခွဲမှု</small></span></div><div className="signed-out-card"><span className="signed-out-orbit"><Sparkles size={28}/></span><div className="section-kicker">LUCKYWHEEL</div><h1>ကံစမ်းမဲများကို<br/>ပျော်ရွှင်စွာ စီမံလိုက်ပါ</h1><p>ကံစမ်းမဲအစီအစဉ်များ၊ ဆုများနှင့် ရလဒ်များကို တစ်နေရာတည်းတွင် ကြည့်ရှုပါ။</p><button className="btn btn-primary full" onClick={()=>{setAuthMode('login');setModal('auth')}}>အကောင့်ဝင်ရန်</button><button className="btn btn-outline full" onClick={()=>{setAuthMode('register');setModal('auth')}}>အသင်းဝင်စာရင်းသွင်းရန်</button><small>ဆက်လက်အသုံးပြုရန် အကောင့်ဝင်ပါ သို့မဟုတ် စာရင်းသွင်းပါ။</small></div><footer className="signed-out-footer">© 2026 LuckyWheel · လုံခြုံစွာ ကာကွယ်ထားသည်</footer></section>}
     {toast&&<div className="toast"><Check size={17}/>{toast}</div>}
     {modal&&<div className="modal-backdrop" onMouseDown={e=>e.target===e.currentTarget&&!wheelSpinning&&setModal('')}><div className={`modal ${modal==='wheel'?'wheel-modal':''}`}><div className="modal-header"><div><div className="section-kicker">LUCKYWHEEL</div><h2>{modal==='wheel'?'ကံစမ်းမဲ ဘီးလှည့်နေပါပြီ':modal==='ledger'?'စာရင်းအသစ်ထည့်ရန်':modal==='auth'?(authMode==='login'?'အကောင့်ဝင်ရန်':'အသင်းဝင်စာရင်းသွင်းရန်'):modal==='raffle'?(editingRaffle?'မဲအစီအစဉ် ပြင်ဆင်ရန်':'မဲအစီအစဉ် အသစ်ဖန်တီးရန်'):modal==='entry'?'ကံစမ်းခွင့်ရယူရန်':modal==='donation'?'အလှူရှင် စာရင်းထည့်ရန်':'အကောင့်အချက်အလက်'}</h2></div>{!wheelSpinning&&<button className="icon-button" onClick={()=>{setModal('');setEditingRaffle(null);setEditRestricted(false)}}><X size={19}/></button>}</div>
-      {modal==='wheel'&&<div className="wheel-stage"><div className="wheel-pointer">▼</div><div className={`wheel-disc ${wheelSpinning?'is-spinning':'is-stopped'}`}><span className="wheel-label label-one">ပထမဆု</span><span className="wheel-label label-two">ဒုတိယဆု</span><span className="wheel-label label-three">ကံထူးသူ</span><span className="wheel-label label-four">နှစ်သိမ့်ဆု</span><span className="wheel-hub"><Sparkles size={23}/></span></div><div className="wheel-raffle-name">{wheelTarget?.title}</div>{wheelSpinning?<div className="wheel-caption"><Sparkles size={16}/> လှည့်ခွင့်တစ်ကြိမ်စီကို လုံခြုံစွာမှတ်တမ်းတင်နေပါသည်...</div>:wheelResult?<div className="wheel-result"><span className="result-kicker">{wheelResult.results.some(r=>r.won)?'🎉 ကံထူးသူစာရင်း':'🎲 ဤအကြိမ်များတွင် ဆုမပေါက်သေးပါ'}</span><small>ပြီးဆုံးသောလှည့်မှု {wheelResult.results.length} ကြိမ် · ဆုရသူ {wheelResult.results.filter(r=>r.won).length} ဦး</small><div className="wheel-batch-results">{wheelResult.results.map((r,i)=><div className="wheel-batch-result" key={i}><b>{i+1}. {r.winnerName}</b><span>{r.won?`${r.prizeName} · ${r.prizeItem} · ${money(r.prizeValue)} ကျပ်`:'ဤအလှည့်တွင် မပေါက်ပါ'}</span></div>)}</div><button className="btn btn-primary" onClick={()=>setModal('')}>ပြီးပါပြီ</button></div>:<div className="wheel-caption">မဲလှည့်မှု မပြီးဆုံးပါ။ ပြန်လည်ကြိုးစားပါ။</div>}</div>}
+      {modal==='wheel'&&<div className="wheel-stage" data-award={wheelAwardTone}><button type="button" className="wheel-sound-toggle" onClick={toggleWheelSound} aria-pressed={wheelSoundOn}>{wheelSoundOn?<Volume2 size={15}/>:<VolumeX size={15}/>} {wheelSoundOn?'အသံဖွင့်ထားသည်':'အသံပိတ်ထားသည်'}</button>{wheelAwardTone&&<div className="celebration-burst" aria-hidden="true">{Array.from({length:22},(_,i)=><i key={i} style={{left:(i*43)%96+'%',animationDelay:i*23+'ms',background:['#f57868','#f8bd61','#77c5a0','#8c87d7','#ce87b6'][i%5]}}/>)}</div>}<div className="wheel-pointer">▼</div><div className={`wheel-disc ${wheelSpinning?'is-spinning':'is-stopped'}`}><span className="wheel-label label-one">ပထမဆု</span><span className="wheel-label label-two">ဒုတိယဆု</span><span className="wheel-label label-three">ကံထူးသူ</span><span className="wheel-label label-four">နှစ်သိမ့်ဆု</span><span className="wheel-hub"><Sparkles size={23}/></span></div><div className="wheel-raffle-name">{wheelTarget?.title}</div>{wheelSpinning?<div className="wheel-caption"><Sparkles size={16}/> လှည့်ခွင့်တစ်ကြိမ်စီကို လုံခြုံစွာမှတ်တမ်းတင်နေပါသည်...</div>:wheelResult?<div className="wheel-result"><span className="result-kicker">{wheelResult.results.some(r=>r.won)?'🎉 ကံထူးသူစာရင်း':'🎲 ဤအကြိမ်များတွင် ဆုမပေါက်သေးပါ'}</span><small>ပြီးဆုံးသောလှည့်မှု {wheelResult.results.length} ကြိမ် · ဆုရသူ {wheelResult.results.filter(r=>r.won).length} ဦး</small><div className="wheel-batch-results">{wheelResult.results.map((r,i)=><div className="wheel-batch-result" key={i}><b>{i+1}. {r.winnerName}</b><span>{r.won?`${r.prizeName} · ${r.prizeItem} · ${money(r.prizeValue)} ကျပ်`:'ဤအလှည့်တွင် မပေါက်ပါ'}</span></div>)}</div><button className="btn btn-primary" onClick={()=>setModal('')}>ပြီးပါပြီ</button></div>:<div className="wheel-caption">မဲလှည့်မှု မပြီးဆုံးပါ။ ပြန်လည်ကြိုးစားပါ။</div>}</div>}
       {modal==='auth'&&<form onSubmit={authenticate} className="form-stack">{authMode==='register'&&<><p className="form-note">အကောင့်ကို တစ်ကြိမ်သာဖွင့်ပါ။ Admin အတည်ပြုပြီးနောက် မဲအစီအစဉ်တစ်ခုစီတွင် သီးခြား ကံစမ်းခွင့်ရယူနိုင်ပါသည်။</p><Field label="အမည်အပြည့်အစုံ" required value={form.name} onChange={v=>setForm({...form,name:v})}/><Field label="ဖုန်းနံပါတ်" value={form.phone} onChange={v=>setForm({...form,phone:v})}/><div className="field-row"><Field label="Viber အကောင့်/ဖုန်း" value={form.contact} onChange={v=>setForm({...form,contact:v})}/><Field label="Telegram username" value={form.telegram} onChange={v=>setForm({...form,telegram:v})}/></div></>}<Field label="Email" type="email" required value={form.email} onChange={v=>setForm({...form,email:v})}/><Field label="စကားဝှက်" type="password" required value={form.password} onChange={v=>setForm({...form,password:v})}/>{authError&&<p className="error-text">{authError}</p>}<button className="btn btn-primary full" disabled={loading||!configured}>{loading?'ခဏစောင့်ပါ...':authMode==='login'?'အကောင့်ဝင်ရန်':'စာရင်းသွင်းရန်'}</button><button type="button" className="btn google-button" disabled={loading||!configured} onClick={googleSignIn}><span>G</span> Google ဖြင့် ဝင်ရန် / Register</button><button type="button" className="btn btn-outline full" disabled={loading||!configured} onClick={facebookSignIn}>Facebook ဖြင့် ဝင်ရန် / Register</button><p className="form-note">Viber / Telegram ကို profile ဆက်သွယ်ရန်အဖြစ် ထည့်နိုင်သည်။ တိုက်ရိုက်ဝင်ရန်မှာ သီးခြား identity verification ချိတ်ဆက်မှု လိုအပ်သည်။</p><button type="button" className="switch-auth" onClick={()=>{setAuthMode(authMode==='login'?'register':'login');setAuthError('')}}>{authMode==='login'?'အကောင့်မရှိသေးပါသလား? Register လုပ်ရန်':'အကောင့်ရှိပြီးသားလား? ဝင်ရန်'}</button></form>}
       {modal==='raffle'&&<form className="form-stack" onSubmit={editingRaffle?saveRaffleEdit:addRaffle}>
         {editRestricted&&<p className="form-note edit-safety-note">ဤမဲတွင် စာရင်းဝင်သူရှိပြီးဖြစ်ပါသည်။ အချိန်ဇယား၊ စုစုပေါင်း/လူတစ်ဦးမဲကန့်သတ်ချက်နှင့် Wheel လှည့်ခွင့်ပုံစံကို Website မှ ပြင်နိုင်ပါသည်။ ရှိပြီးသားလူတစ်ဦး၏ခွင့်နှင့် စုစုပေါင်းစာရင်းထက် လျှော့၍မရပါ။ ဆုငွေ၊ ဈေးနှုန်းနှင့် ဆုစာရင်းကို မပြောင်းနိုင်ပါ။</p>}
