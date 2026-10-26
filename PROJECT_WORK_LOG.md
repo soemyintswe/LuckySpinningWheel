@@ -165,4 +165,6 @@
 - Deployed the Spark client Firestore Rules to `projects/luckydraw-mksdev/releases/cloud.firestore` using the `soemyintswe@gmail.com` Google Cloud login. Rules compile succeeded; the release now points to ruleset `83a330a0-001e-414a-9e48-c757a82a9151`.
 - Verified all three configured Firestore composite indexes show `READY`.
 - Added Firestore `Timestamp` schedule fields so rules enforce opening/draw time using trusted request time rather than relying only on browser time. The UI also displays the client-side randomness limitation.
-- Final build, syntax/diff checks and GitHub publication are being completed after the last UI/rules update.
+- Final verification: `npm run build` succeeded; `node --check functions/index.js` and `git diff --check` passed. Vite reports one advisory bundle over 500 kB (863.56 kB minified; no build failure).
+- Confirmed `.env` resolves to project ID `luckydraw-mksdev` without exposing config secrets, `.env` and `.firebaserc` remain Git-ignored, and the existing local preview at `http://localhost:5174/` returns HTTP 200.
+- Published source and project notes to GitHub `main`: commit `fc40af6` (`Support Spark plan client-side draws`). Working tree was clean immediately after push.
