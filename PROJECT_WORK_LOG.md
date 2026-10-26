@@ -374,3 +374,11 @@
 - Published source, Firestore Rules, Burmese user guide, and this work log to GitHub `main`; final commit recorded below.
 - Kept winner claim transfer separate from actual cash payment: changing the owner now posts a balanced liability reclassification and leaves bank/cash balances unchanged until the prize is actually paid. Rebuilt successfully; Hosting was redeployed and verified with HTTP 200 and bundle `index-BYh9ldVU.js`.
 - Final GitHub `main` commit: `616bdb2`.
+
+### Iteration 27 — prevent the wheel from appearing frozen during draw verification (2026-10-26)
+
+- User screenshot shows the Wheel modal says it is spinning while the wheel appears stationary. Source shows `.is-rolling` only transitions through four turns once, then holds that rotation while `runTransaction` is still awaiting Firestore. This makes a slow transaction look frozen even though the pending draw remains active.
+- Change rolling phase to a continuous CSS rotation while Firestore resolves. On transaction success, switch to the existing deceleration/landing animation and show the result only after the stop. Preserve draw eligibility, one-ticket transaction, prize-slot uniqueness, and no-result/retry safeguards. Build, deploy Hosting, verify live asset, update guide/log, publish source and log.
+- `.wheel-disc.is-rolling` now loops continuously while the Firestore transaction is pending; successful transaction response switches to the existing target-stop animation and result remains hidden until it finishes. This removes the one-shot transition that left the busy message over a stationary wheel. Build succeeds (existing large-bundle advisory); diff check succeeds. No Firestore records/rules changed. Deploying Hosting and recording final version.
+- Hosting deployed to `https://luckydraw-mksdev.web.app/`; verified HTTP 200 with `index-DwEkNDYq.js` and `index-CZu0kio5.css`. Published source and work log to GitHub `main` at the final commit recorded below.
+- Final GitHub `main` commit for Iteration 27: `ac9fbfa`.
