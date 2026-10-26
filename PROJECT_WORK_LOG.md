@@ -218,3 +218,10 @@
 - Iteration 8 code fixes subscribe to the Admin document live and no longer block raffle entries/entry approvals solely because prize configuration is locked after a spin. `npm run build` succeeded (Vite reports the known JS bundle size advisory). Firestore Rules compiled and deployed successfully to `luckydraw-mksdev`.
 
 - Verification: `npm run build` passed; `git diff --check` passed. Live Rules deployed after Firebase CLI account was selected as `soemyintswe@gmail.com`. Admin profile provisioning is the remaining manual Console action because Firestore REST host connections timed out.
+
+### Iteration 9 — Publish Firebase Hosting site and verify Admin document (2026-10-26)
+
+- User shared Firebase Console screenshot confirming `admins/Wr6vfnoyswRRou81ca97p7CxYXT2` exists with email `soemyintswe@gmail.com` and role `admin`; the Firebase Hosting URL `https://luckydraw-mksdev.web.app` currently displays Firebase “Site Not Found”.
+- Inspection: Hosting default site `luckydraw-mksdev` exists and `firebase.json` serves `dist`, but the user-facing site is not deployed/currently missing. Build and deploy Hosting to the confirmed project, then verify the public URL returns the app. Ensure the previous Admin listener and raffle entry fixes are included in the build. Record final URL and commit.
+- User then supplied Firebase Console screenshot confirming the Admin document already exists at `admins/Wr6vfnoyswRRou81ca97p7CxYXT2` with the expected email/role fields. This resolves the previously pending Admin provisioning step; the app's live listener will recognize the role after the deployed bundle loads.
+- `npm run build` succeeded. Deployed Firebase Hosting to the existing default site `luckydraw-mksdev`; the release completed and `https://luckydraw-mksdev.web.app` returned HTTP 200 with the Burmese app HTML.
