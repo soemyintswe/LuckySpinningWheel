@@ -168,3 +168,10 @@
 - Final verification: `npm run build` succeeded; `node --check functions/index.js` and `git diff --check` passed. Vite reports one advisory bundle over 500 kB (863.56 kB minified; no build failure).
 - Confirmed `.env` resolves to project ID `luckydraw-mksdev` without exposing config secrets, `.env` and `.firebaserc` remain Git-ignored, and the existing local preview at `http://localhost:5174/` returns HTTP 200.
 - Published source and project notes to GitHub `main`: commit `fc40af6` (`Support Spark plan client-side draws`). Working tree was clean immediately after push.
+
+### Iteration 5 — logout landing and optional image URL layout (2026-10-26)
+
+- User report from screenshots: after sign-out, the account dialog stays open and the dashboard remains visible; image URL fields overlap/squeeze nearby form controls. Images should be optional.
+- Closed the account dialog on sign-out and added a signed-out landing page with sign-in/register choices. Successful email sign-in/register closes the auth dialog; signed-out users no longer see the management dashboard.
+- Replaced the large empty image tile with an optional, compact URL field and a small preview only when a link is supplied. The fields wrap within narrow prize/donation forms; a profile image can be cleared.
+- Verification: `npm run build` and `git diff --check` passed. Vite continues to show the known large-JS-chunk advisory; no build errors.

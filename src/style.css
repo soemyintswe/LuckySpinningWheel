@@ -9,3 +9,30 @@
 .balance-note{font-size:8px!important;color:#aaa4ae!important}
 .prize-budget{display:grid;grid-template-columns:minmax(0,1fr) minmax(145px,.7fr);gap:10px;align-items:start;border:1px solid #f0e5d8;border-radius:10px;background:linear-gradient(120deg,#fffaf0,#fff7f4);padding:12px}.prize-budget>div:first-child{display:grid;gap:5px}.prize-budget>div:first-child b{font-size:11px;color:#5a4c50}.prize-budget>div:first-child small{font-size:9px;color:#9b8c8d;line-height:1.5}.prize-budget>.field{min-width:0}.prize-budget:nth-of-type(2){grid-template-columns:minmax(0,1fr) minmax(120px,.5fr)}.calculation-preview{grid-column:1/-1;display:grid;gap:5px;background:#fff;border-radius:8px;padding:9px 11px;color:#8d6870;font-size:9px}.calculation-preview.invalid{color:#c64d49;background:#fff0ec}.google-button{background:#fff;color:#555;border-color:#e7e3df;width:100%;height:41px}.google-button:hover{background:#f9f9f9;border-color:#cfcac6}.google-button>span{font-family:Arial,sans-serif;color:#4285f4;font-size:17px;font-weight:700}.wheel-raffle-name{font-size:10px;color:#aaa0a7;margin:8px 0 -7px}.result-amount{font-size:16px;color:#c88349}.prize-fields{display:grid;grid-template-columns:1fr 1fr;gap:7px}.prize-fields .field{min-width:0}.prize-fields .select-field{align-self:end}.prize-entry .image-upload-control{height:78px}.prize-entry .image-upload-control>img{height:78px}@media(max-width:760px){.prize-budget{grid-template-columns:1fr 1fr}.prize-budget:nth-of-type(2){grid-template-columns:1fr 1fr}.prize-budget>.field{grid-column:1/-1}.prize-fields{grid-template-columns:1fr}.prize-entry .image-upload-control{height:62px}.prize-entry .image-upload-control>img{height:62px}}
 .delivery-status{display:inline-flex;align-items:center;margin-top:10px;padding:5px 9px;border-radius:999px;background:#fff4da;color:#8a5a00;font-size:12px;font-weight:700}
+
+/* Signed-out landing and compact optional image URL controls */
+.signed-out-shell{display:block;background:radial-gradient(ellipse at 50% 20%,#fff 0,#fbf7f0 55%,#f8eff0 100%)}
+.signed-out-home{min-height:100vh;display:grid;grid-template-rows:auto 1fr auto;place-items:center;padding:30px 20px 20px}
+.signed-out-brand{width:min(100%,960px);display:flex;align-items:center;gap:10px;color:#28253a;font-size:19px;font-weight:700}
+.signed-out-brand .brand-mark{width:42px;height:42px}
+.signed-out-card{width:min(100%,420px);margin:auto;background:#fff;border:1px solid #f0e9e3;border-radius:22px;box-shadow:0 20px 60px #362d3012;padding:34px 32px;text-align:center}
+.signed-out-orbit{width:58px;height:58px;margin:0 auto 18px;border-radius:18px;background:linear-gradient(145deg,#fff1de,#ffe9e9);color:#e87968;display:grid;place-items:center}
+.signed-out-card .section-kicker{margin-bottom:10px}
+.signed-out-card h1{font-size:25px;line-height:1.55;margin:0 0 9px;color:#302e3d}
+.signed-out-card>p{font-size:12px;line-height:1.8;color:#96919d;margin:0 0 22px}
+.signed-out-card>.btn{margin-top:9px}
+.signed-out-card>small{display:block;margin-top:16px;color:#aaa5ad;font-size:10px}
+.signed-out-footer{align-self:end;color:#aaa5ad;font-size:10px}
+.image-upload{min-width:0;width:100%;align-content:start}
+.image-upload-label{font-size:10px;font-weight:600;color:#615d6b;line-height:1.5}
+.image-upload-label small{font-size:9px;color:#aaa2a9;font-weight:400}
+.image-url-input{width:100%;min-width:0;height:36px;border:1px solid #eae6e2;border-radius:7px;padding:0 9px;outline:0;color:#454251;background:#fff;font-size:10px}
+.image-url-input:focus{border-color:#e88a7d;box-shadow:0 0 0 3px #fcece9}
+.image-url-input::placeholder{color:#c0bbc1}
+.image-url-preview{display:block;width:min(100%,150px);height:74px;object-fit:cover;border:1px solid #f0eae5;border-radius:8px}
+.image-url-hint{font-size:9px;color:#aaa2a9;line-height:1.5;overflow-wrap:anywhere}
+.prize-entry .image-url-input{font-size:8px;padding:0 5px}
+.prize-entry .image-url-hint{font-size:7px}
+.account-panel .image-upload{margin:0 auto 12px;width:min(100%,260px)}
+.account-panel .image-url-preview{width:64px;height:64px;border-radius:50%;margin:0 auto}
+.account-panel .image-url-hint{display:none}
