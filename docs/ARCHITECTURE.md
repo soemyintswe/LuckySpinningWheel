@@ -1,45 +1,44 @@
 # Architecture and data model
 
-This note is intended for the next developer or coding agent. Read it with `PROJECT_WORK_LOG.md` before changing a draw.
+Read this note with `PROJECT_WORK_LOG.md` before changing draw behavior.
 
 ## Runtime
 
-- React 19 / Vite frontend (`src/main.jsx`, `src/style.css`). Firebase browser config comes from `.env`.
-- Firebase Auth provides email/password and Google popup sign-in. Facebook popup sign-in is available after its provider is configured in Firebase Console. Viber/Telegram remain contact methods, not direct auth providers. A signed-in user gets a `users/{uid}` profile with `approved:false`; a project owner grants Admin separately through `admins/{uid}`.
-- Firestore stores raffle, entry, donation, award, and financial ledger records. Storage stores image binaries; Firestore stores their download URLs.
-- Cloud Functions v2 in `asia-southeast1` validate approvals and spin requests. Deploy them with rules, not as a client-only app.
+- React 19 / Vite frontend (`src/main.jsx`, `src/style.css`); Firebase browser config is in ignored `.env`.
+- Firebase Auth uses email/password and Google popup. New user profiles start unapproved; the Firebase owner grants Admin through `admins/{uid}`.
+- Spark setup uses Firestore only. The frontend does not call Cloud Functions or upload to Firebase Storage. Image fields store publicly accessible URLs.
+- Draw choice uses `crypto.getRandomValues()` in the browser. Firestore Rules enforce ownership, spin quota and no duplicate prize slot, but cannot verify that a modified browser chose a fair random result. This is not suitable as a server-verified draw for high-stakes lotteries.
 
 ## Collections
 
 | Collection | Purpose / access |
 | --- | --- |
-| `admins/{uid}` | Per-project Admin allowlist. Created by the Firebase project owner, never by the client. |
-| `users/{uid}` | Auth profile, approval state, avatar and private contact data. Owner and Admin can read; user can change only allowed profile fields. |
-| `raffles/{raffleId}` | Public draw setup: title, organizer snapshot, ticket cap, fixed prizes, `cashPool`, `consolationCount`, derived `drawSlots`, `drawLocked`, `remainingCash`, `openAt`, `drawAt`, `seriesId`, `roundNumber`, and recurrence metadata. Each recurrence round is a separate raffle document. Admin writes; everyone reads public raffle details. |
-| `raffles/{raffleId}/spinAttempts/{spinId}` | Idempotent result of a single spin request. The callable writes; owner/Admin can read. |
-| `participants/{entryId}` | Private entry tied to `userId`, raffle, approved `ticketCount`, `spinsUsed`, contact/address/payment details and profile image. Owner/Admin reads; Admin review is required. |
-| `donations/{donationId}` | Private donor submission, donor/item photos, type, quantity, total value and review status. Admin approval creates the income ledger transaction. |
-| `winners/{winnerId}` | Public award record with `raffleId`, `prizeSlotId`, winner snapshot, amount/type, `deliveryStatus` (`pending`, `delivered`, or `reclaimed`), and `deliveryHistory`. `spinRaffle` creates awards; Admin-only `updatePrizeDelivery` changes custody status transactionally. |
-| `ledger/{entryId}` | Admin-only income/outflow rows for approved donations, approved ticket sales, prizes only when transferred, returned prizes, and manual adjustments. An untransferred prize remains in cash/goods inventory. |
+| `admins/{uid}` | Project owner-created Admin allowlist. Client writes are denied. |
+| `users/{uid}` | Auth profile, approval state and contacts. Private to owner/Admin. |
+| `raffles/{raffleId}` | Public setup, organizer snapshot, schedule, ticket count, cash pool, `remainingCash`, prize setup, `drawSpinsUsed` and `drawLocked`. Each recurring round is a separate document. |
+| `raffles/{raffleId}/prizeSlots/{slotId}` | Immutable prize choices initialized with the raffle. Each quantity becomes a unique slot. Cash consolation slots split remaining pool into whole MMK. |
+| `raffles/{raffleId}/claimedSlots/{slotId}` | Permanent claim marker preventing a prize slot from being awarded twice. |
+| `raffles/{raffleId}/spinAttempts/{spinId}` | One attempt record per random ID, including entry and win/no-win result. Immutable. |
+| `participants/{entryId}` | Private registration and contact/payment data, raffle ID, `ticketCount`, `spinsUsed`, review status and profile image URL. Owner/Admin access. |
+| `donations/{donationId}` | Private donor submission, item/value, contact and image URLs. Admin review creates ledger income. |
+| `winners/{winnerId}` | Public winner and prize snapshot, unique `prizeSlotId`, custody state and delivery history. Client transaction creates winner/claim/attempt together; only Admin changes custody. |
+| `ledger/{entryId}` | Admin-only donations, ticket income, prize outflow on delivery, return inflow, and manual rows. |
 
-Storage paths are `profiles/{uid}/{file}`, `donations/{uid}/{file}`, and `raffles/{uid}/...`. Individual images must be under 5 MB and have an image content type. Public reads are intentional for displayed profiles, raffle/prize imagery, and winner announcements.
+## Spin transaction
 
-## Spin and award rules
+1. The client loads prize slots and chooses an approved participant entry (the participant's own entry, or an Admin-operated entry with remaining allowance).
+2. A Firestore transaction rereads raffle and entry, validates status, timestamps and remaining quota, then reads all claim markers before writing anything.
+3. The client chooses no-win or one unclaimed slot using browser cryptographic random values. The transaction increments `spinsUsed` and `drawSpinsUsed`, locks the draw and records an immutable attempt. For a win it creates the winner snapshot and unique slot claim in the same transaction.
+4. Concurrent clients race on transaction reads/writes. Firestore retries a transaction on a conflicting claim; it then sees that slot as unavailable. Rules also deny rewriting an existing claim marker.
+5. Rules cannot validate the random choice itself. A modified client could claim a different still-available slot. For trusted randomness move the choice into a server-controlled function and plan for Blaze billing.
 
-1. A participant may call `spinRaffle` only for their own `status:'approved'` entry. Admin may spin on behalf of a random eligible entry. The server requires `spinsUsed < ticketCount`.
-2. The caller sends a fresh random `spinId`. The attempt document path is deterministic under the raffle, so a network retry returns the original result and cannot consume the same request twice.
-3. A Firestore transaction reads the raffle, all approved entries for the raffle, and the awards already made. It constructs the prize slots once, sets `drawLocked`, consumes one spin, and commits an optional winner and ledger outflow atomically.
-4. Each configured fixed prize has a unique `fixed-N` slot. The cash consolation balance is `cashPool - fixed cash awards`. If `consolationCount > 0`, integer MMK is split with `floor(balance/count)`; leftover kyats go one apiece to the first consolation slots. `consolationCount:0` leaves the unscheduled money in `remainingCash`.
-5. Every award slot is selected at most once. Across remaining attempts, win probability is bounded by `available slots / remaining approved spins`; remaining attempts after all awards have been used are logged as no-win results. Goods and cash prizes have separate ledger types.
-6. Once the first spin succeeds, `drawLocked:true` prevents new participant approvals. Existing approved entries retain their remaining spins. Pending registrations cannot become eligible after the draw starts.
-7. Server time gates opening and draw timestamps. Recurring setup generates independent raffle documents, each with its own entries, winners, and ledger links. Admin CSV reports join the currently loaded entries, donations, winners, and ledger rows.
+## Approval and custody transactions
 
-## Prize custody
+- Admin entry approval increments raffle `ticketCount` and posts ticket income atomically. It is blocked after the draw locks.
+- Donation approval changes status and creates an income row atomically.
+- Winner status starts as `pending`; the prize remains reserved and ledger inventory is unchanged until handoff. Marking delivered posts one outflow and reduces cash balance. Reclaiming a delivered award posts a return and restores the cash balance. Reclaiming before handoff frees inventory accounting but keeps the original slot consumed, preserving the no-repeat audit trail.
+- Public image URLs must be accessible to users' browsers. Shared Drive links are normalized to a thumbnail URL where possible; the host can still block embedding or revoke access.
 
-An award starts in `pending` and reserves its prize slot, but does not create a ledger outflow. Admin marks it `delivered` when cash/items are handed over; the callable writes the outflow and updates `remainingCash`. Admin can reclaim a pending award with a reason, or accept a returned already-delivered award, which posts a ledger inflow. A reclaimed slot remains consumed in its original round to preserve the no-repeat guarantee and audit trail.
+## Handover
 
-## Handover to another owner
-
-The application contains no fixed Firebase/GitHub user identity. A new owner makes a Firebase project, configures Authentication, Firestore, Storage, billing and authorized domains, supplies their own untracked `.env`, deploys rules/functions, then bootstraps their first Admin UID in `admins/{uid}`. Firebase resources and a custom domain are separate from the source repository and must be transferred or recreated through Firebase/GCP IAM and DNS. Never add an exported service-account key or `.env` to GitHub.
-
-The source repository is expected at `https://github.com/soemyintswe/LuckySpinningWheel`; fork it or transfer repository ownership if a different operator will maintain it.
+A new operator configures a Firebase project, Auth providers, Firestore rules/indexes, authorized domains, and their own ignored `.env`. The owner creates the first `admins/{uid}` document in the Firebase Console. Hosting/custom domain and DNS access are separate from this source repository. Never commit `.env`, service account keys, or OAuth secrets.

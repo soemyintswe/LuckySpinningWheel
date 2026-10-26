@@ -1,5 +1,31 @@
 # Lucky Spinning Wheel — Project Work Log
 
+## 2026-10-26 — Iteration 4 planned work (recorded before implementation)
+
+### User's Spark Plan direction
+
+- Do not link either billing account. Keep Firebase on Spark; leave Cloud Storage and Cloud Functions undeployed.
+- Replace callable Cloud Function dependency for draw/approval/delivery operations with client Firestore transactions and strict Firestore Security Rules.
+- Replace Firebase Storage uploads with direct image URLs (including publicly viewable Google Drive image links).
+- Use the generated `luckydraw-mksdev` Firebase web configuration in the ignored local `.env`.
+- Run `npm run build` and syntax checks; make the local app ready for `npm run dev` testing.
+
+### Security boundary for client-side draws
+
+- Firestore Rules can enforce approved-entry ownership, one spin per transaction, `spinsUsed < ticketCount`, immutable prize-slot documents, one claim document per slot, and atomic winner/attempt writes.
+- Firestore Rules cannot attest that a modified browser used fair randomness or prevent a malicious client from choosing any still-unclaimed prize. The local implementation can use `crypto.getRandomValues`, but that is not a trusted server lottery. UI/docs must disclose this limitation; do not claim server-grade draw fairness.
+- Direct image links must be public and embeddable. Google Drive URLs may stop working when sharing changes or the provider blocks hotlinking; the UI should preview/fail clearly and never request Drive passwords/tokens.
+
+### Planned implementation
+
+1. Remove all frontend callable-function usage and Storage upload usage.
+2. Create immutable prize-slot docs at raffle creation and use Firestore transactions to atomically consume an approved entry spin, unique slot claim, winner, and attempt.
+3. Tighten Firestore Rules so client transactions cannot bypass spin quotas or create duplicate prize claims; let Admin perform approval and delivery state changes without Cloud Functions.
+4. Keep prize inventory in the ledger until handover; record return/reclaim transitions transactionally.
+5. Add direct image URL inputs with preview and Drive shared-link normalization.
+6. Keep Cloud Functions source optional but un-deployed; document Spark limitations and the security difference from trusted server randomness.
+7. Update work log/README/architecture, build and syntax-check, then push the completed source to GitHub.
+
 ## 2026-10-26 — Iteration 3 planned work (recorded before implementation)
 
 ### New requirements
@@ -43,7 +69,20 @@
 - `node --check functions/index.js` passed. Root and Functions `npm audit --omit=dev` each reported 0 vulnerabilities. `git diff --check` reported no whitespace errors.
 - GitHub Actions `Verify` passed on commit `a98d622`, including frontend build, both production dependency audits, and Functions syntax check.
 - Firebase Console/Hosting, Auth providers, Firestore/Storage, custom domain DNS, and Functions have not been deployed. No `.env` or service-account key was created or committed.
-- To finish Firebase connection, restore network access to `auth.firebase.tools` and complete Firebase CLI login as `soemyintswe@gmail.com` (user-selected method). Then verify/create project `luckydraw-mksdev` and configure the Web app, Google/Facebook Auth providers, billing, Storage, Firestore, and Hosting domain. Do not commit `.env` or OAuth/service-account secrets. If CLI login remains blocked, project owner may instead grant the current CLI principal `mks.edu.services@gmail.com` Owner access through Firebase IAM, with the understanding this is broad project access.
+- At the end of this first check, Firebase CLI OAuth was blocked by network access to `auth.firebase.tools`; see the provisioning progress below for how the project owner account was used through `gcloud` instead. The project exists now; remaining setup is billing-dependent Storage/Functions, Facebook provider credentials, initial Admin UID bootstrap, Hosting deployment, and DNS verification. Do not commit `.env` or OAuth/service-account secrets.
+
+### Firebase provisioning progress — 2026-10-26
+
+- The user's authorized Google Cloud account `soemyintswe@gmail.com` was available through `gcloud` credentials even though Firebase CLI auth proxy was unreachable. Created Google Cloud/Firebase project `luckydraw-mksdev` (`Lucky Draw MKS Dev`) and attached Firebase resources. The project owner remains the requested account.
+- Created Firebase Web App `Lucky Spinning Wheel`; its public web configuration is stored only in the ignored local `.env`. `.firebaserc` is also local/ignored and targets `luckydraw-mksdev`.
+- Enabled Email/Password and Google providers, set the Google support address to `soemyintswe@gmail.com`, and authorized the default Firebase domains, `localhost`, and `lucky.mksdev.asia`.
+- Created Cloud Firestore Standard database `(default)` in `asia-southeast1` with free tier enabled. Compiled and deployed the project Firestore rules as release `cloud.firestore`.
+- Project billing is currently disabled. No Cloud Billing account has been linked. The account exposes two open billing accounts; choosing one requires the owner because it controls which account receives usage charges.
+- Cloud Storage's new Firebase default bucket and Cloud Functions deployment require Blaze/pay-as-you-go billing under current Firebase requirements. Storage bucket, Functions, and live Hosting deployment remain pending owner billing selection. No payment method or billing account was altered.
+- `.env` and `.firebaserc` remain git-ignored; no access token or service-account key was written to GitHub.
+- Added the enabled Email/Password and Google provider setup to `firebase.json` so a future Firebase CLI deployment can reproduce the Authentication configuration. Project Auth was configured through Firebase's provisioning API and verified enabled using the project's Identity Toolkit configuration.
+- Added three required composite indexes for raffle approval queries and participant/donation owner listings; index build operations are still `CREATING` as of this log update. They must reach `READY` before the corresponding queries are available.
+- Owner has been asked to select one of the two existing billing accounts or defer billing. No response has been received yet; keep Storage bucket creation and Cloud Functions deployment paused until an account is explicitly chosen.
 
 ## 2026-10-26 — Iteration 2 planned work (recorded before implementation)
 
@@ -113,3 +152,17 @@
 - Before production use, create/select a Firebase project, configure the web app environment, enable Google and email providers, bootstrap an owner-controlled `admins/{uid}` document, then deploy rules/functions/hosting. Storage rules that consult Firestore require the Storage-to-Firestore permissions prompt to be enabled in Firebase.
 - No emulator/security integration tests were run. Build and syntax checks do not substitute for a live Firebase rules/emulator review. Production security review and operational verification remain the deploying owner's responsibility.
 - The UI can be previewed locally with `npm run dev`; first-time Firebase configuration is required for auth-backed use.
+
+### Iteration 4 — Spark-only Firebase path (2026-10-26)
+
+- User explicitly selected Firebase Spark: do not link a billing account, deploy Cloud Functions, or create Firebase Storage. The `luckydraw-mksdev` project, Firestore database and local ignored `.env` remain configured from the prior setup.
+- Updated the React client to use Firestore transactions for spins, approvals, donations, and prize delivery/reclamation. Each raffle now gets stable `prizeSlots`; claims are stored once in `claimedSlots`. Every spin transaction increments the entry use count and raffle attempt counter, and a winning transaction creates the winner, claim, and attempt records atomically.
+- Prize cash is held in `remainingCash` until delivery. Delivery posts a ledger outflow and reduces the balance; reclaim after delivery posts a return and restores cash. Reclaim before delivery releases the reserved prize without falsely booking an outflow.
+- Removed Firebase Storage image upload integration from the client. Profile, organizer, entrant, raffle, prize, donor and donated-item images now accept public direct URLs; public Google Drive links are normalized to a thumbnail URL where possible.
+- Replaced Firestore rules to allow only authenticated, approved participants to consume their own approved spin quota; raffle counter, participant counter, attempt, winner and claimed slot must form one atomic transaction. Admin-only controls cover approvals, accounting, and prize delivery. Prize slot documents become immutable for the draw after the first spin.
+- Important security boundary: client-side `crypto.getRandomValues()` is not a trusted random source when the client is controlled by the entrant. Firestore rules prevent over-spinning and duplicate slot claims, but cannot prove the result was selected fairly. Do not describe Spark-only client draws as server-verified/fraud-proof; use a trusted server draw for high-stakes public lotteries.
+- Updated the README for Spark-only setup and added the fairness, public-image URL, and owner handover limitations. Cloud Functions source is retained for reference and is not deployed or called by the Spark client.
+- Deployed the Spark client Firestore Rules to `projects/luckydraw-mksdev/releases/cloud.firestore` using the `soemyintswe@gmail.com` Google Cloud login. Rules compile succeeded; the release now points to ruleset `83a330a0-001e-414a-9e48-c757a82a9151`.
+- Verified all three configured Firestore composite indexes show `READY`.
+- Added Firestore `Timestamp` schedule fields so rules enforce opening/draw time using trusted request time rather than relying only on browser time. The UI also displays the client-side randomness limitation.
+- Final build, syntax/diff checks and GitHub publication are being completed after the last UI/rules update.

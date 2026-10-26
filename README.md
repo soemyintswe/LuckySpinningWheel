@@ -1,73 +1,47 @@
 # Lucky Spinning Wheel
 
-မြန်မာဘာသာဖြင့် ကံစမ်းမဲပြုလုပ်နိုင်သော React + Firebase ဝဘ်အက်ပ်။ Admin/အလှူရှင်/ဒိုင်က မဲအစီအစဉ်နှင့် ဆုငွေခွဲဝေမှုကို သတ်မှတ်နိုင်ပြီး၊ အတည်ပြုပြီးသား မဲဝင်သူက မိမိရရှိထားသော အကြိမ်အရေအတွက်အတိုင်း ကိုယ်တိုင် wheel လှည့်နိုင်သည်။ မဲရလဒ်၊ ဆုထပ်မထွက်မှုနှင့် အကြိမ်ကန့်သတ်ချက်ကို Firebase server function က ဆုံးဖြတ်သည်။
+မြန်မာဘာသာဖြင့် ကံစမ်းမဲအစီအစဉ်များ ဖန်တီးခြင်း၊ register/အတည်ပြုခြင်း၊ ဆု wheel လှည့်ခြင်းနှင့် ငွေ/ပစ္စည်းစာရင်း၊ report ထုတ်ခြင်းတို့ ပါဝင်သော React + Firebase app ဖြစ်သည်။ လက်ရှိ setup ကို Firebase Spark အခမဲ့အစီအစဉ်နှင့် အသုံးပြုရန် ပြင်ဆင်ထားသည်။
 
-## လုပ်ဆောင်ချက်များ
+## ပါဝင်သည့်လုပ်ဆောင်ချက်များ
 
-- Email/Password နှင့် Google Sign-In ဖြင့် Register/Sign-In; အသစ်ဝင်သူအား Admin အတည်ပြုမှ မဲဝင်ခွင့်ရသည်။
-- မဲအစီအစဉ်တစ်ခုစီအတွက် မဲတန်ဖိုး၊ မဲကန့်သတ်ချက်၊ ပုံ၊ ဘဏ်နှင့် mobile wallet ငွေလွှဲအချက်အလက်၊ ပုံသေဆုနှင့် ပစ္စည်းတန်ဖိုး သတ်မှတ်နိုင်သည်။
-- ငွေဆုကန် (MMK) နှင့် နှစ်သိမ့်ဆုအရေအတွက် ထည့်ပါ။ ပုံသေငွေဆုများကို နုတ်ပြီး ကျန်ငွေကို နှစ်သိမ့်ဆုများအကြား ကျပ်ပြည့်ညီမျှစွာ ခွဲပေးသည်။ မခွဲဝေနိုင်သည့် ကျပ်ကျန်ကို ပထမဆု slot များတွင် တစ်ကျပ်စီ အစဉ်လိုက် ထည့်သည်။ နှစ်သိမ့်ဆုအရေအတွက် 0 ဖြစ်လျှင် ကျန်ငွေကို မပေးသေးဘဲ raffle လက်ကျန်အဖြစ်ထားသည်။
-- အတည်ပြုထားသော entry တစ်ခုစီ၏ `ticketCount` သည် လှည့်ခွင့်အများဆုံးဖြစ်ပြီး server က `spinsUsed` ကို တိုးပေးသည်။ ဒိုင်/organizer ကလည်း ကျန်လှည့်ခွင့်ရှိသော မဲများထဲမှ server ကျပန်းရွေးပြီး လှည့်ပေးနိုင်သည်။
-- ဆုတစ်ခုချင်းစီကို တစ်ကြိမ်သာ ပေးအပ်နိုင်သည်။ ဆု slot ကို server transaction ဖြင့် သုံးပြီးသားအဖြစ် မှတ်တမ်းတင်သဖြင့် တစ်ပြိုင်နက်လှည့်မှုများတွင် လည်း ဆုထပ်မထွက်ပါ။ ဆု slot အားလုံးကုန်ပြီးနောက် ကျန်လှည့်မှုများကို ဆုမရသောရလဒ်အဖြစ် မှတ်တမ်းတင်သည်.
-- အတည်ပြုထားသော လှူဒါန်းငွေ/ပစ္စည်း၊ မဲလက်မှတ်ဝင်ငွေနှင့် ဆုပေးချေမှုကို Admin ledger တွင် အဝင်/အထွက်မှတ်တမ်းတင်ပြီး၊ ငွေသား၊ ပစ္စည်းအရေအတွက်နှင့် ပစ္စည်းတန်ဖိုးလက်ကျန်ကို ကြည့်နိုင်သည်။ ညှိနှိုင်းမှတ်တမ်းကို ကိုယ်တိုင်ထည့်နိုင်သည်။
-- စီစဉ်သူ/ဒိုင်၊ အလှူရှင်၊ မဲဝင်သူ၊ မဲအစီအစဉ်၊ ဆုနှင့် လှူဒါန်းပစ္စည်းပုံများကို Firebase Storage တွင်တင်နိုင်သည် (ပုံတစ်ပုံ 5MB အောက်)။ ပုံများနှင့် အတည်ပြုပြီးသော ဆုရလဒ်အချို့သည် အများမြင်နိုင်သည်။ ကိုယ်ရေးလျှို့ဝှက်ပုံ မတင်ပါနှင့်။
+- Email/password နှင့် Google account sign-in. အသစ်စာရင်းသွင်းသူများကို Admin က အတည်ပြုသည်။
+- မဲအစီအစဉ်ကို တစ်ကြိမ်တည်း သို့မဟုတ် သတ်မှတ်ထားသည့် အကြိမ်ရေ၊ ရက်ကွာခြားမှု၊ ဖွင့်ချိန်/ဖောက်ချိန်ဖြင့် ဖန်တီးနိုင်သည်။
+- ငွေသားဆုကန်၊ ပုံသေဆုအဆင့်၊ ပစ္စည်းတန်ဖိုး၊ အရေအတွက်၊ နှစ်သိမ့်ဆုအရေအတွက် သတ်မှတ်နိုင်သည်။ ပုံသေငွေဆုများနုတ်ပြီး ကျန်ငွေကို နှစ်သိမ့်ဆုများအကြား ကျပ်ပြည့်ညီမျှ ခွဲဝေပေးသည်။
+- အတည်ပြုထားသော မဲစာရင်းတစ်ခု၏ `ticketCount` သည် လှည့်ခွင့်အများဆုံးဖြစ်သည်။ Firestore transaction တစ်ခုစီတွင် `spinsUsed` နှင့် မဲဖောက်ကြိမ်ရေကို တစ်ပြိုင်နက်တိုးစေပြီး `claimedSlots` ဖြင့် ဆုတစ်ဆုကို တစ်ကြိမ်သာရစေသည်။
+- ဆုမလွှဲမချင်း လက်ကျန်စာရင်းတွင် ရှိနေသည်။ Admin က လွှဲပြီးကြောင်း သို့မဟုတ် အကြောင်းပြချက်ဖြင့် ပြန်သိမ်းကြောင်း မှတ်တမ်းတင်နိုင်ပြီး ငွေ/ပစ္စည်းစာရင်းကို transaction ဖြင့် တစ်ပြိုင်နက်ပြင်ဆင်သည်။
+- အလှူရှင်၊ ပစ္စည်း၊ ကံစမ်းသူ၊ မဲအစီအစဉ်နှင့် ဆုများအတွက် image URL ထည့်နိုင်သည်။ Google Drive အပါအဝင် အများကြည့်နိုင်သော direct image URL သာလိုအပ်သည်။ ဤ app သည် ပုံ upload မလုပ်ပါ။
+- Admin report ကို UTF-8 CSV အဖြစ် download လုပ်နိုင်သည်။
 
-## ဆုငွေခွဲဝေမှု ဥပမာ
+## မဲဖောက်မှု fairness болон security хязгаарлалт
 
-ဆုငွေကန် 1,000,000 ကျပ်၊ ပုံသေဆု 300,000 + 200,000 + 100,000 ကျပ်၊ နှစ်သိမ့်ဆု 4 ဆုဟု သတ်မှတ်ပါက ကျန် 400,000 ကို 4 ဖြင့်စားပြီး နှစ်သိမ့်ဆုတစ်ဆုလျှင် 100,000 ကျပ် ရမည်။ ကျန်ကျပ်ရှိပါက ပထမနှစ်သိမ့်ဆု slot များထဲသို့ ကျပ်တစ်ကျပ်စီ ထည့်ပေးသည်။ UI က မဲမဖန်တီးမီ ခွဲဝေမှုကို preview ပြသည်။
-
-ဤဆုငွေကန်သည် ငွေသားဆုများအတွက်ဖြစ်သည်။ ပစ္စည်းဆုများကို သီးခြားတန်ဖိုးနှင့် အရေအတွက်ဖြင့် inventory ledger တွင် မှတ်တမ်းတင်သည်။ Payment gateway နှင့် bank transfer အတည်ပြုမှု အလိုအလျောက်မပါဝင်သေးပါ။ Admin က လွှဲငွေစစ်ဆေးပြီးမှ မဲစာရင်း သို့မဟုတ် အလှူကို အတည်ပြုပါ။
-
-## နည်းပညာနှင့် လိုအပ်ချက်များ
-
-- Node.js 22 LTS, npm.
-- Firebase Authentication: Email/Password နှင့် Google Sign-In; Cloud Firestore, Firebase Storage, Cloud Functions v2, Firebase Hosting.
-- `package.json` နှင့် `package-lock.json` တွင် web dependencies သတ်မှတ်ထားသည်။ `functions/package.json` နှင့် lock ဖိုင်တွင် Cloud Functions dependencies သတ်မှတ်ထားသည်။ Python `requirements.txt` မလိုပါ။
-- Cloud Functions deploy အတွက် Firebase project billing လိုအပ်နိုင်သည်။ လက်ရှိ quota နှင့် plan ကို Firebase Console တွင်စစ်ဆေးပါ။
+Client သည် `crypto.getRandomValues()` ကိုသုံး၍ ရလဒ်ရွေးကာ Firestore transaction ကိုရေးသည်။ Security Rules က အတည်ပြုထားသော မဲစာရင်း၊ တစ်ကြိမ်လျှင် ခွင့်တစ်ကြိမ်သာလျှော့ခြင်း၊ သတ်မှတ်ထားသည့် အများဆုံးအကြိမ်နှင့် ဆုတစ်ဆုထပ်မရခြင်းတို့ကို စစ်ဆေးသည်။ သို့သော် Spark တွင် Cloud Functions မသုံးသဖြင့် ပြုပြင်ထားသော browser က random ရလဒ်ကို လှည့်စားနိုင်သည်။ ထို့ကြောင့် ဤဗားရှင်းကို **server ဘက်မှ အတည်ပြုထားသော၊ လိမ်လည်ပြင်ဆင်မှုမဖြစ်နိုင်သော မဲဖောက်စနစ်ဟု မယူဆရပါ**။ တန်ဖိုးမြင့် သို့မဟုတ် အများပြည်သူဆိုင်ရာ မဲဖောက်မှုအတွက် server ဘက်မှ မဲဖောက်ခြင်း သို့မဟုတ် လွတ်လပ်စွာစစ်ဆေးနိုင်သော ဝန်ဆောင်မှု လိုအပ်သည်။
 
 ## Local development
 
-1. Firebase Console တွင် project ဖန်တီးပါ။ Authentication > Sign-in method မှ Email/Password နှင့် Google provider ဖွင့်ပါ။ Google provider တွင် support email သတ်မှတ်ပြီး Authentication settings > Authorized domains တွင် local/production domain များထည့်ပါ။
-2. Firestore database နှင့် Storage bucket ဖန်တီးပါ။ Project settings > Your apps မှ Web app ဖန်တီး၍ config ယူပါ။
-3. `.env.example` ကို `.env` အဖြစ်ကူးပြီး Firebase Web config (`VITE_FIREBASE_*`) တန်ဖိုးများဖြည့်ပါ။ `.env` ကို GitHub ပေါ် မတင်ပါနှင့်။
-4. Root project မှ `npm ci`၊ ထို့နောက် `functions` folder မှ `npm ci` လုပ်ပါ။ Firebase CLI ကို `soemyintswe@gmail.com` ဖြင့် login ဝင်ပြီး `.firebaserc.example` ကို `.firebaserc` အဖြစ်ကူးပါ (`.firebaserc` သည် Git မှ ignore လုပ်ထားသည်)။ `luckydraw-mksdev` project ကို ရွေး/ဖန်တီးပြီး `firebase use luckydraw-mksdev` လုပ်ပါ။
-5. Project owner သည် Google ဖြင့် (သို့) Email ဖြင့် ပထမ Admin account ကို register လုပ်ပြီး Authentication Users မှ UID ယူပါ။ Firestore Console တွင် `admins/{UID}` document ကို project owner အဖြစ် ကိုယ်တိုင်ဖန်တီးပါ။ Rules က client-side Admin promotion ကို တားထားသည်။
-6. `firebase deploy --only firestore:rules,storage,functions` ဖြင့် backend rules/functions တင်ပါ။ `npm run dev` ဖြင့် local app စပါ။
-7. Build စစ်ရန် `npm run build`; Functions syntax စစ်ရန် `node --check functions/index.js`; dependency audit စစ်ရန် root နှင့် `functions` folder နှစ်ခုစလုံးတွင် `npm audit --omit=dev` လုပ်ပါ။
+Тохиргоо: Node.js 22 LTS, npm. Firebase Auth болон Firestore ашиглана. Functions, Storage bucket, төлбөрийн холболт шаардлагагүй.
 
-## Google account တစ်ခုမှ အခြားသူထံ ပေးအပ်ခြင်း
+1. Dependencies татах: `npm ci`
+2. `.env.example`-ээс `.env` үүсгээд Firebase Web config (`VITE_FIREBASE_*`) утгуудаа бөглөнө. `.env`-ийг GitHub-д commit хийж болохгүй.
+3. Firebase Console-д Email/Password, Google providers-ийг идэвхжүүлж Firestore database, rules-ийг тохируулна. `lucky.mksdev.asia`-г ашиглах бол Auth authorized domains-д нэмнэ.
+4. Анхны owner/admin хэрэглэгчээр нэвтэрсний дараа Firestore Console-д зөв хэрэглэгчийн UID дор `admins/{UID}` document үүсгэнэ. Үүнийг зөвхөн project owner удирдана.
+5. Rules/indexes: `firebase deploy --only firestore:rules,firestore:indexes`
+6. Local app: `npm run dev` (ихэвчлэн `http://localhost:5173`). Build: `npm run build`.
 
-App code တွင် သတ်မှတ်ထားသော Firebase/GitHub account မရှိပါ။ Project ကို အခြားပိုင်ရှင်ထံ လွှဲပေးရာတွင်:
+Firebase web API key нь browser config бөгөөд `.env`-д байх нь хэвийн; Firestore Rules нь өгөгдлийг хамгаалах гол хил юм. Service account key, OAuth secret болон нууц credential-уудыг repository-д хэзээ ч бүү оруул.
 
-1. ပိုင်ရှင်အသစ်သည် မိမိ Google account ဖြင့် Firebase project အသစ်တည်ဆောက်ပါ (သို့) လက်ရှိ project ပိုင်ရှင်က Google Cloud/Firebase IAM မှ Owner role ကို တရားဝင်ပေးအပ်ပါ။ Google Auth provider နှင့် Authorized domains များကို ပြင်ဆင်ပါ.
-2. ပိုင်ရှင်အသစ်၏ Firebase Web config ဖြင့် `.env` အသစ်တည်ဆောက်ပါ။ Firebase project၊ Google OAuth domain၊ DNS နှင့် Hosting တို့သည် project တစ်ခုချင်းစီအလိုက် သီးခြားဖြစ်သည်.
-3. Firestore နှင့် Storage rules, Cloud Functions ကို project အသစ်သို့ deploy လုပ်ပါ။ ပိုင်ရှင်အသစ် Google ဖြင့် sign-in ဝင်ပြီး UID ရလာလျှင် Firebase Console မှ `admins/{UID}` document ဖြင့် Admin ခွင့် bootstrap လုပ်ပါ.
-4. Hosting custom domain လွှဲရာတွင် DNS verification နှင့် HTTPS certificate ကို hosting အသစ်တွင် သတ်မှတ်ပါ။ GitHub repository ကို fork လုပ်ခြင်း သို့မဟုတ် Settings > Transfer ownership ဖြင့် ပေးအပ်နိုင်သည်.
+## Зураг оруулах
 
-Firebase Auth ဝင်ထားသူတွင် `admins/{uid}` document မရှိပါက Admin ခွင့်မရပါ။ `.env`, service account/private key, Google OAuth secret များကို GitHub သို့ မတင်ပါနှင့်။
+Зургийг Google Drive эсвэл өөр HTTPS хостод байршуулж, “anyone with the link” харах эрхтэй URL-ийг оруулна. Drive link-ийг thumbnail URL руу хувиргахыг оролдоно. Хост зураг харуулахыг хориглосон, link өөрчлөгдсөн, эсвэл нууцлалтай болсон тохиолдолд зураг харагдахгүй. Image URL нь public бол түүнд хамаарах зургийг бусад хэрэглэгч үзэж болно.
 
-## Deploy: Firebase project `luckydraw-mksdev` and `lucky.mksdev.asia`
+## Project handover
 
-`firebase.json` တွင် Hosting rewrite, Firestore rules, Storage rules နှင့် Cloud Functions သတ်မှတ်ထားသည်။ Firebase CLI ကို `soemyintswe@gmail.com` အကောင့်ဖြင့် ချိတ်ပြီး `luckydraw-mksdev` project ကို ရွေးချယ်ပါ (မရှိသေးလျှင် ဖန်တီးပါ)။ ထို့နောက် `npm run build`, `firebase deploy` လုပ်ပါ။ Project ID သည် တစ်ကမ္ဘာလုံးတွင် မတူညီရပါမည်။ အခြား account က အရင်ပိုင်ထားပြီးဖြစ်ပါက project Owner က `soemyintswe@gmail.com` ကို Owner အဖြစ် ဖိတ်ခေါ်ပေးရပါမည်။ Firebase Console > Hosting > Add custom domain တွင် `lucky.mksdev.asia` ထည့်ပြီး ပေးသော verification/DNS records ကို `mksdev.asia` DNS provider တွင် သတ်မှတ်ပါ။ လက်ရှိကွန်ပျူတာ၏ Firebase CLI သည် `mks.edu.services@gmail.com` ဖြင့် ဝင်ထားသဖြင့် `soemyintswe@gmail.com` OAuth နှင့် project ပိုင်ဆိုင်မှုကို အတည်ပြုပြီး deploy လုပ်ရန် ကျန်ရှိနေပါသည်။
+Шинэ эзэмшигч Firebase project дээрээ Auth providers, Firestore database/rules/indexes, authorized domains болон өөрийн `.env` тохируулна. Admin UID-г зөвхөн project owner үүсгэнэ. Custom domain шилжүүлэхийн тулд Firebase Hosting domain болон DNS эзэмшигчийн эрхийг тусад нь тохируулна. GitHub repository-г account-аар fork эсвэл transfer хийж болно. Өөр хүний Firebase project рүү `.env`-г дамжуулахгүй; шинэ project-ийн Web config-оор сольж хэрэглэнэ.
 
-## Repository guide
+## Repository files
 
-- `src/main.jsx`, `src/style.css`: Burmese GUI နှင့် Firebase client integration.
-- `functions/index.js`: auth callback, entry/donation approval, transactional draw နှင့် cash/in-kind ledger.
-- `firestore.rules`, `storage.rules`: client data access နှင့် image upload rules.
-- `PROJECT_WORK_LOG.md`: ဆက်လုပ်မည့် agent/developer အတွက် project လုပ်ငန်းမှတ်တမ်း.
-- `docs/ARCHITECTURE.md`: Firestore schema, draw/award rules, account handover.
-
-## License
-
-MIT License. See [LICENSE](LICENSE).
-
-## Recurring rounds, prize custody, and reports
-
-- One setup can create 1–24 separate rounds, spaced by a chosen number of days. Each round stores its opening time and draw time; times are entered in the browser's local timezone and stored as ISO timestamps. Entry approval and prize spins are enforced by server time checks. A round without a draw time may be spun any time after opening.
-- Winning a prize reserves it for the winner. It remains in inventory and the cash balance until an Admin marks it transferred. If it cannot be delivered, Admin can reclaim it with a reason; reclaiming an untransferred prize releases the reservation, and reclaiming an already delivered prize posts a ledger return. The original win remains in the winner history.
-- Admin > Reports exports a UTF-8 CSV containing participant entries, donations, prize outcomes/delivery status, and ledger transactions.
-
-## Sign-in providers
-
-Email/password and Google sign-in are implemented. Facebook sign-in is implemented in the UI but requires an owner to enable Facebook in Firebase Authentication and enter the Facebook App ID/secret in Firebase Console. Viber and Telegram details are supported as contact fields; they are not direct Firebase sign-in providers in this app. Direct identity sign-in would require a separately configured, verified custom authentication integration. Do not ask users for Viber/Telegram passwords.
+- `src/main.jsx`, `src/style.css`: UI болон Firebase client logic.
+- `firestore.rules`, `firestore.indexes.json`: data access болон query indexes.
+- `functions/`: хуучин server-side хувилбарын source; Spark deployment-д ашиглахгүй.
+- `PROJECT_WORK_LOG.md`: хөгжүүлэлт, сонголт, хязгаарлалт болон дараагийн ажлын тэмдэглэл.
+- `docs/ARCHITECTURE.md`: collection загвар болон draw transaction.
+- `LICENSE`, `CONTRIBUTING.md`, `SECURITY.md`: repository governance.

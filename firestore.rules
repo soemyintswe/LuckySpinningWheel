@@ -2,38 +2,52 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     function signedIn() { return request.auth != null; }
-    function isAdmin() { return signedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid)); }
-    function approved() { return signedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.approved == true; }
+    function admin() { return signedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid)); }
+    function userDoc(uid) { return get(/databases/$(database)/documents/users/$(uid)); }
+    function approved() { return signedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && userDoc(request.auth.uid).data.approved == true; }
+    function raffle(raffleId) { return get(/databases/$(database)/documents/raffles/$(raffleId)); }
+    function raffleAfter(raffleId) { return getAfter(/databases/$(database)/documents/raffles/$(raffleId)); }
 
     match /admins/{uid} { allow read: if signedIn() && request.auth.uid == uid; allow write: if false; }
     match /users/{uid} {
       allow create: if signedIn() && request.auth.uid == uid && request.resource.data.role == 'participant' && request.resource.data.approved == false;
-      allow read: if isAdmin() || (signedIn() && request.auth.uid == uid);
-      allow update: if isAdmin() || (signedIn() && request.auth.uid == uid && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name','phone','contact','address','payment','avatarUrl','updatedAt']));
+      allow read: if admin() || (signedIn() && request.auth.uid == uid);
+      allow update: if admin() || (signedIn() && request.auth.uid == uid && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name','phone','contact','telegram','address','payment','avatarUrl','updatedAt']));
       allow delete: if false;
     }
     match /raffles/{raffleId} {
       allow read: if true;
-      allow create, update, delete: if isAdmin();
+      allow create, delete: if admin();
+      allow update: if admin() || (signedIn() && approved() && resource.data.status == 'active' && request.time >= resource.data.openAtTimestamp && (resource.data.drawAtTimestamp == null || request.time >= resource.data.drawAtTimestamp) && resource.data.drawSpinsUsed < resource.data.ticketCount && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['drawSpinsUsed','drawLocked','lastSpinEntryId']) && request.resource.data.drawSpinsUsed == resource.data.drawSpinsUsed + 1 && request.resource.data.drawLocked == true && existsAfter(/databases/$(database)/documents/participants/$(request.resource.data.lastSpinEntryId)) && get(/databases/$(database)/documents/participants/$(request.resource.data.lastSpinEntryId)).data.status == 'approved' && get(/databases/$(database)/documents/participants/$(request.resource.data.lastSpinEntryId)).data.spinsUsed < get(/databases/$(database)/documents/participants/$(request.resource.data.lastSpinEntryId)).data.ticketCount && getAfter(/databases/$(database)/documents/participants/$(request.resource.data.lastSpinEntryId)).data.spinsUsed == get(/databases/$(database)/documents/participants/$(request.resource.data.lastSpinEntryId)).data.spinsUsed + 1 && getAfter(/databases/$(database)/documents/participants/$(request.resource.data.lastSpinEntryId)).data.raffleId == raffleId);
+      match /prizeSlots/{slotId} { allow read: if true; allow create, update, delete: if admin() && existsAfter(/databases/$(database)/documents/raffles/$(raffleId)) && getAfter(/databases/$(database)/documents/raffles/$(raffleId)).data.drawLocked != true; }
+      match /claimedSlots/{slotId} {
+        allow read: if admin() || signedIn();
+        allow create: if signedIn() && !exists(/databases/$(database)/documents/raffles/$(raffleId)/claimedSlots/$(slotId)) && existsAfter(/databases/$(database)/documents/raffles/$(raffleId)/prizeSlots/$(slotId)) && existsAfter(/databases/$(database)/documents/winners/$(request.resource.data.winnerId)) && getAfter(/databases/$(database)/documents/winners/$(request.resource.data.winnerId)).data.prizeSlotId == slotId && getAfter(/databases/$(database)/documents/winners/$(request.resource.data.winnerId)).data.raffleId == raffleId && request.resource.data.userId == getAfter(/databases/$(database)/documents/winners/$(request.resource.data.winnerId)).data.winnerId && (admin() || getAfter(/databases/$(database)/documents/winners/$(request.resource.data.winnerId)).data.winnerId == request.auth.uid);
+        allow update, delete: if false;
+      }
       match /spinAttempts/{attemptId} {
-        allow read: if isAdmin() || (signedIn() && resource.data.userId == request.auth.uid);
-        allow write: if false;
+        allow read: if admin() || (signedIn() && resource.data.userId == request.auth.uid);
+        allow create: if signedIn() && request.resource.data.actorId == request.auth.uid && request.resource.data.entryId is string && existsAfter(/databases/$(database)/documents/participants/$(request.resource.data.entryId)) && getAfter(/databases/$(database)/documents/participants/$(request.resource.data.entryId)).data.spinsUsed == get(/databases/$(database)/documents/participants/$(request.resource.data.entryId)).data.spinsUsed + 1 && request.resource.data.userId == getAfter(/databases/$(database)/documents/participants/$(request.resource.data.entryId)).data.userId && (!request.resource.data.won || (existsAfter(/databases/$(database)/documents/raffles/$(raffleId)/claimedSlots/$(request.resource.data.slotId)) && getAfter(/databases/$(database)/documents/raffles/$(raffleId)/claimedSlots/$(request.resource.data.slotId)).data.attemptId == attemptId && getAfter(/databases/$(database)/documents/raffles/$(raffleId)/claimedSlots/$(request.resource.data.slotId)).data.winnerId == request.resource.data.winnerId && existsAfter(/databases/$(database)/documents/winners/$(request.resource.data.winnerId))));
+        allow update, delete: if false;
       }
     }
     match /participants/{entryId} {
-      allow read: if isAdmin() || (signedIn() && resource.data.userId == request.auth.uid);
-      allow create: if (approved() || isAdmin()) && request.resource.data.userId == request.auth.uid && request.resource.data.status == 'pending' && request.resource.data.ticketCount is int && request.resource.data.ticketCount > 0 && request.resource.data.ticketCount <= 100;
-      allow update: if isAdmin();
-      allow delete: if isAdmin();
+      allow read: if admin() || (signedIn() && resource.data.userId == request.auth.uid);
+      allow create: if (approved() || admin()) && request.resource.data.userId == request.auth.uid && request.resource.data.status == 'pending' && request.resource.data.ticketCount is int && request.resource.data.ticketCount > 0 && request.resource.data.ticketCount <= 100 && request.resource.data.spinsUsed == 0;
+      allow update: if admin() || (signedIn() && approved() && resource.data.userId == request.auth.uid && resource.data.status == 'approved' && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['spinsUsed']) && request.resource.data.spinsUsed == resource.data.spinsUsed + 1 && request.resource.data.spinsUsed <= resource.data.ticketCount && raffleAfter(resource.data.raffleId).data.drawSpinsUsed == raffle(resource.data.raffleId).data.drawSpinsUsed + 1 && raffleAfter(resource.data.raffleId).data.lastSpinEntryId == entryId);
+      allow delete: if admin();
     }
     match /donations/{donationId} {
-      allow read: if isAdmin() || (signedIn() && resource.data.userId == request.auth.uid);
-      allow create: if (approved() || isAdmin()) && request.resource.data.userId == request.auth.uid && request.resource.data.status == 'pending';
-      allow update, delete: if isAdmin();
+      allow read: if admin() || (signedIn() && resource.data.userId == request.auth.uid);
+      allow create: if (approved() || admin()) && request.resource.data.userId == request.auth.uid && request.resource.data.status == 'pending';
+      allow update, delete: if admin();
     }
-    match /winners/{winnerId} { allow read: if true; allow write: if false; }
-    match /ledger/{entryId} {
-      allow read, write: if isAdmin();
+    match /winners/{winnerId} {
+      allow read: if true;
+      allow create: if signedIn() && request.resource.data.deliveryStatus == 'pending' && existsAfter(/databases/$(database)/documents/raffles/$(request.resource.data.raffleId)/claimedSlots/$(request.resource.data.prizeSlotId)) && getAfter(/databases/$(database)/documents/raffles/$(request.resource.data.raffleId)/claimedSlots/$(request.resource.data.prizeSlotId)).data.winnerId == winnerId && existsAfter(/databases/$(database)/documents/raffles/$(request.resource.data.raffleId)/spinAttempts/$(request.resource.data.attemptId)) && getAfter(/databases/$(database)/documents/raffles/$(request.resource.data.raffleId)/spinAttempts/$(request.resource.data.attemptId)).data.winnerId == winnerId && getAfter(/databases/$(database)/documents/raffles/$(request.resource.data.raffleId)/spinAttempts/$(request.resource.data.attemptId)).data.won == true && (admin() || request.resource.data.winnerId == request.auth.uid);
+      allow update: if admin() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['deliveryStatus','deliveryHistory','updatedAt']) && request.resource.data.deliveryHistory.size() == resource.data.deliveryHistory.size() + 1 && request.resource.data.deliveryStatus in ['delivered','reclaimed'];
+      allow delete: if false;
     }
+    match /ledger/{entryId} { allow read, write: if admin(); }
   }
 }

@@ -1,4 +1,17 @@
 {
+  "auth": {
+    "providers": {
+      "emailPassword": true,
+      "googleSignIn": {
+        "oAuthBrandDisplayName": "Lucky Spinning Wheel",
+        "supportEmail": "soemyintswe@gmail.com",
+        "authorizedRedirectUris": [
+          "https://luckydraw-mksdev.firebaseapp.com/__/auth/handler",
+          "https://lucky.mksdev.asia/__/auth/handler"
+        ]
+      }
+    }
+  },
   "functions": [{ "source": "functions", "codebase": "default" }],
   "firestore": { "rules": "firestore.rules", "indexes": "firestore.indexes.json" },
   "storage": { "rules": "storage.rules" },
