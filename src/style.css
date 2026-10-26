@@ -42,3 +42,4 @@
 @media(max-width:620px){.account-management-row{align-items:flex-start;flex-wrap:wrap}.account-management-info{min-width:calc(100% - 50px)}.account-management-actions{width:100%;justify-content:flex-start;margin-left:40px}.account-management-actions .btn{padding:7px 8px;font-size:9px}}
 
 .prize-request-list{margin:18px 0 24px;padding:20px;border:1px solid #f3d8b5;border-radius:18px;background:linear-gradient(135deg,#fff9ed,#fff)}.prize-request-list h3{margin:0 0 14px;font-size:1rem}.prize-request-row{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 0;border-top:1px solid #f1e8df}.prize-request-row .table-actions{display:flex;gap:8px;flex-wrap:wrap}@media(max-width:640px){.prize-request-row{align-items:flex-start;flex-direction:column}}
+.account-uid{margin:5px 0!important;color:#817b88;font-size:.74rem;overflow-wrap:anywhere}.account-uid code{font-size:.72rem;color:#60586b}
