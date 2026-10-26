@@ -13,6 +13,7 @@ const auth = app ? getAuth(app) : null
 const db = app ? getFirestore(app) : null
 const money = n => new Intl.NumberFormat('my-MM').format(Number(n || 0))
 const safe = v => (v || '').toString().trim()
+const profileEnsurePromises = new Map()
 function randomInt(max) { if(max<=0)return 0; const range=0x100000000,limit=range-range%max,buf=new Uint32Array(1);do{crypto.getRandomValues(buf)}while(buf[0]>=limit);return buf[0]%max }
 function downloadCsv(name, rows) { const quote=v=>'"'+String(v??'').replaceAll('"','""')+'"'; const csv='\ufeff'+rows.map(row=>row.map(quote).join(',')).join('\r\n'); const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'})); a.download=name; a.click(); URL.revokeObjectURL(a.href) }
 function normalizeImageUrl(value) { const url=safe(value); if(!url)return ''; try { const parsed=new URL(url); if(parsed.hostname==='drive.google.com'){const id=parsed.searchParams.get('id')||parsed.pathname.match(/\/d\/([^/]+)/)?.[1]; if(id)return `https://drive.google.com/thumbnail?id=${id}&sz=w1200`} return ['https:','http:'].includes(parsed.protocol)?url:'' } catch{return ''} }
@@ -52,7 +53,7 @@ function App() {
         if(generation!==authGeneration)return
         userSeen=true; latestProfile=snap.exists()?snap.data():null
         if(snap.exists())setProfileCheck('found')
-        if(!snap.exists()&&!profileCreationStarted){profileCreationStarted=true;setProfileCheck('creating');setDoc(userRef,{name:current.displayName||'',email:current.email||'',phone:'',contact:'',role:'participant',approved:false,status:'active',pointsBalance:0,createdAt:serverTimestamp()},{merge:true}).then(()=>{if(generation===authGeneration)setProfileCheck(value=>value==='found'?value:'created')}).catch(error=>{if(generation===authGeneration)setProfileCheck(`error:${error.code||'profile-write'}`)})}
+        if(!snap.exists()&&!profileCreationStarted){profileCreationStarted=true;setProfileCheck('creating');ensureParticipantProfile(current).catch(error=>{if(generation===authGeneration)setProfileCheck(`error:${error.code||'profile-write'}`)})}
         publish()
       },error=>{if(generation===authGeneration){userSeen=true;setProfileCheck(`error:${error.code||'profile-read'}`);publish()}})
       stopAdmin=onSnapshot(adminRef, snap=>{
@@ -88,9 +89,27 @@ function App() {
   const goodsCount = ledger.reduce((n,x)=>n+(x.assetType==='goods'?(x.direction==='in'?1:-1)*Number(x.quantity||0):0),0)
   const goodsByItem = Object.values(ledger.filter(x=>x.assetType==='goods').reduce((a,x)=>{const key=x.itemLabel||'ပစ္စည်း';a[key]??={name:key,count:0,value:0};const sign=x.direction==='in'?1:-1;a[key].count+=sign*Number(x.quantity||0);a[key].value+=sign*Number(x.amount||0);return a},{}))
 
-  async function authenticate(e) { e.preventDefault(); if (!auth) return; setLoading(true); setAuthError(''); try { if(authMode==='register') { const cred=await createUserWithEmailAndPassword(auth,safe(form.email),form.password); await updateProfile(cred.user,{displayName:safe(form.name)}); await setDoc(doc(db,'users',cred.user.uid),{name:safe(form.name),email:safe(form.email),phone:safe(form.phone),contact:safe(form.contact),telegram:safe(form.telegram),role:'participant',approved:false,status:'active',pointsBalance:0,createdAt:serverTimestamp()}); setProfile({name:safe(form.name),approved:false,role:'participant',status:'active',pointsBalance:0}) } else { await signInWithEmailAndPassword(auth,safe(form.email),form.password) } setModal('') } catch(err) { setAuthError(err.code==='auth/email-already-in-use'?'ဒီ email ဖြင့် အကောင့်ရှိပြီးသားပါ။':err.code==='auth/invalid-credential'?'Email သို့မဟုတ် စကားဝှက် မှားနေပါသည်။':err.message) } finally {setLoading(false)} }
-  async function googleSignIn(){if(!auth)return;setLoading(true);setAuthError('');try{await signInWithPopup(auth,new GoogleAuthProvider());setModal('')}catch(e){setAuthError(e.message)}finally{setLoading(false)}}
-  async function facebookSignIn(){if(!auth)return;setLoading(true);setAuthError('');try{await signInWithPopup(auth,new FacebookAuthProvider());setModal('')}catch(e){setAuthError(e.message)}finally{setLoading(false)}}
+  async function ensureParticipantProfile(firebaseUser,details={}){
+    if(!db||!firebaseUser)throw Error('Firebase account မရရှိပါ။')
+    const uid=firebaseUser.uid,ref=doc(db,'users',uid),editable={}
+    for(const key of ['name','phone','contact','telegram'])if(details[key]!==undefined)editable[key]=safe(details[key])
+    let pending=profileEnsurePromises.get(uid)
+    if(!pending){
+      pending=(async()=>{const snap=await getDoc(ref);if(snap.exists())return{data:snap.data(),created:false};const initial={name:firebaseUser.displayName||'',email:firebaseUser.email||'',phone:'',contact:'',telegram:'',role:'participant',approved:false,status:'active',pointsBalance:0,createdAt:serverTimestamp(),...editable};await setDoc(ref,initial,{merge:true});return{data:initial,created:true}})()
+      profileEnsurePromises.set(uid,pending)
+    }
+    try{
+      const result=await pending
+      let profileData=result.data
+      if(Object.keys(editable).length){await updateDoc(ref,{...editable,updatedAt:serverTimestamp()});profileData={...profileData,...editable}}
+      setProfileCheck(result.created?'created':'found');setProfile(profileData)
+      return profileData
+    }finally{if(profileEnsurePromises.get(uid)===pending)profileEnsurePromises.delete(uid)}
+  }
+  function profileSetupError(error){const code=error?.code||'unknown';setProfileCheck(`error:${code}`);if(code==='permission-denied')return 'အကောင့်ဝင်ပြီးပါပြီ၊ သို့သော် Firestore profile သိမ်းခွင့်မရပါ။ Admin သည် Firestore Rules ကိုစစ်ဆေးပါ။';if(code==='unavailable'||code==='deadline-exceeded')return 'အကောင့်ဝင်ပြီးပါပြီ၊ Firestore မချိတ်ဆက်နိုင်သေးပါ။ အင်တာနက်စစ်ပြီး Account မှ profile ကိုပြန်စမ်းပါ။';return `အကောင့်ဝင်ပြီးပါပြီ၊ Firestore profile မသိမ်းနိုင်ပါ (${code})။ Account မှ ပြန်စမ်းနိုင်ပါသည်။`}
+  async function authenticate(e) { e.preventDefault(); if (!auth) return; setLoading(true); setAuthError(''); try { let credential;if(authMode==='register'){credential=await createUserWithEmailAndPassword(auth,safe(form.email),form.password);await updateProfile(credential.user,{displayName:safe(form.name)})}else credential=await signInWithEmailAndPassword(auth,safe(form.email),form.password);await ensureParticipantProfile(credential.user,authMode==='register'?{name:form.name,phone:form.phone,contact:form.contact,telegram:form.telegram}:{});setModal('')} catch(err) {if(auth.currentUser){const message=profileSetupError(err);setModal('account');notify(message)}else setAuthError(err.code==='auth/email-already-in-use'?'ဒီ email ဖြင့် အကောင့်ရှိပြီးသားပါ။':err.code==='auth/invalid-credential'?'Email သို့မဟုတ် စကားဝှက် မှားနေပါသည်။':err.message)} finally {setLoading(false)} }
+  async function googleSignIn(){if(!auth)return;setLoading(true);setAuthError('');try{const credential=await signInWithPopup(auth,new GoogleAuthProvider());await ensureParticipantProfile(credential.user);setModal('')}catch(error){if(auth.currentUser){setModal('account');notify(profileSetupError(error))}else setAuthError(error.message)}finally{setLoading(false)}}
+  async function facebookSignIn(){if(!auth)return;setLoading(true);setAuthError('');try{const credential=await signInWithPopup(auth,new FacebookAuthProvider());await ensureParticipantProfile(credential.user);setModal('')}catch(error){if(auth.currentUser){setModal('account');notify(profileSetupError(error))}else setAuthError(error.message)}finally{setLoading(false)}}
   async function addRaffle(e) {
     e.preventDefault()
     try {
