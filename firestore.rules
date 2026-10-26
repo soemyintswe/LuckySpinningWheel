@@ -15,6 +15,12 @@ service cloud.firestore {
       allow create, update: if admin() && uid != request.auth.uid && exists(/databases/$(database)/documents/users/$(uid)) && userDoc(uid).data.approved == true && request.resource.data.role == 'admin';
       allow delete: if admin() && uid != request.auth.uid;
     }
+    match /paymentOptions/{optionId} {
+      allow read: if true;
+      allow create: if admin() && request.resource.data.type in ['bank','wallet'] && request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 50;
+      allow update: if admin() && request.resource.data.type in ['bank','wallet'] && request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 50;
+      allow delete: if admin();
+    }
     match /users/{uid} {
       allow create: if signedIn() && request.auth.uid == uid && request.resource.data.role == 'participant' && request.resource.data.approved == false && request.resource.data.status == 'active' && request.resource.data.pointsBalance == 0;
       allow read: if admin() || (signedIn() && request.auth.uid == uid);
