@@ -18,12 +18,13 @@ Read this note with `PROJECT_WORK_LOG.md` before changing draw behavior.
 | `admins/{uid}` | Project owner-created Admin allowlist. Client writes are denied. |
 | `users/{uid}` | Auth profile, approval and lifecycle status, private contacts, and Admin-managed `pointsBalance`. Private to owner/Admin. |
 | `raffles/{raffleId}` | Public setup, organizer snapshot, `entryMode` (`free`/`paid`/`points`), ticket/points rate, schedule, ticket count, cash pool, `remainingCash`, prize setup, `drawSpinsUsed` and `drawLocked`. Each recurring round is a separate document. |
-| `raffles/{raffleId}/prizeSlots/{slotId}` | Immutable prize choices initialized with the raffle. Each quantity becomes a unique slot. Cash consolation slots split remaining pool into whole MMK. |
+| `raffles/{raffleId}/prizeSlots/{slotId}` | Immutable prize choices initialized with the raffle. Each quantity becomes a unique slot. Cash consolation slots split remaining pool into whole MMK, distributing remainder kyats to earliest slots; fixed-amount mode leaves any unallocated amount in the pool. |
 | `raffles/{raffleId}/claimedSlots/{slotId}` | Permanent claim marker preventing a prize slot from being awarded twice. |
 | `raffles/{raffleId}/spinAttempts/{spinId}` | One attempt record per random ID, including entry and win/no-win result. Immutable. |
 | `participants/{entryId}` | Private raffle entry and contact/payment/coupon reference. New entry IDs are `{uid}_{raffleId}`, limiting each account to one request per raffle; `ticketCount` is the requested chance count, `spinsUsed` is the draw quota used, and `status` is Admin review status. Owner/Admin access. |
 | `donations/{donationId}` | Private donor submission, item/value, contact and image URLs. Admin review creates ledger income. |
-| `winners/{winnerId}` | Public winner and prize snapshot, unique `prizeSlotId`, custody state and delivery history. Client transaction creates winner/claim/attempt together; only Admin changes custody. |
+| `winners/{winnerId}` | Public winner and prize snapshot, unique `prizeSlotId`, custody state, current `ownerUid` (fallback to original `winnerId`) and delivery history. Client transaction creates winner/claim/attempt together; only Admin changes custody. |
+| `prizeRequests/{requestId}` | Private-to-requester/Admin request by the current prize owner to donate a prize back or transfer it to an approved account by email. Admin resolves atomically with winner ownership/custody and ledger updates. |
 | `ledger/{entryId}` | Admin-only donations, ticket income, prize outflow on delivery, return inflow, and manual rows. |
 | `pointLedger/{entryId}` | Admin-only point awards, adjustments, and raffle-entry deductions. |
 
@@ -47,3 +48,5 @@ Read this note with `PROJECT_WORK_LOG.md` before changing draw behavior.
 ## Handover
 
 A new operator configures a Firebase project, Auth providers, Firestore rules/indexes, authorized domains, and their own ignored `.env`. The owner creates the first `admins/{uid}` document in the Firebase Console. Hosting/custom domain and DNS access are separate from this source repository. Never commit `.env`, service account keys, or OAuth secrets.
+
+- Winners can request a cash or goods prize donation back into the fund or request transfer to an active approved member email. Admin validates the recipient and approves/rejects. Approval writes a custody event and ledger rows in one transaction; transfer records a payout, and donation records matching payout/contribution rows.

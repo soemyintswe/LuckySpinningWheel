@@ -47,7 +47,13 @@ service cloud.firestore {
     match /winners/{winnerId} {
       allow read: if true;
       allow create: if signedIn() && request.resource.data.deliveryStatus == 'pending' && existsAfter(/databases/$(database)/documents/raffles/$(request.resource.data.raffleId)/claimedSlots/$(request.resource.data.prizeSlotId)) && getAfter(/databases/$(database)/documents/raffles/$(request.resource.data.raffleId)/claimedSlots/$(request.resource.data.prizeSlotId)).data.winnerId == winnerId && existsAfter(/databases/$(database)/documents/raffles/$(request.resource.data.raffleId)/spinAttempts/$(request.resource.data.attemptId)) && getAfter(/databases/$(database)/documents/raffles/$(request.resource.data.raffleId)/spinAttempts/$(request.resource.data.attemptId)).data.winnerId == winnerId && getAfter(/databases/$(database)/documents/raffles/$(request.resource.data.raffleId)/spinAttempts/$(request.resource.data.attemptId)).data.won == true && (admin() || request.resource.data.winnerId == request.auth.uid);
-      allow update: if admin() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['deliveryStatus','deliveryHistory','updatedAt']) && request.resource.data.deliveryHistory.size() == resource.data.deliveryHistory.size() + 1 && request.resource.data.deliveryStatus in ['delivered','reclaimed'];
+      allow update: if admin() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['deliveryStatus','deliveryHistory','updatedAt','ownerUid','ownerName','ownerImage','transferEmail']) && request.resource.data.deliveryHistory.size() == resource.data.deliveryHistory.size() + 1 && request.resource.data.deliveryStatus in ['delivered','reclaimed','donated','transferred'];
+      allow delete: if false;
+    }
+    match /prizeRequests/{requestId} {
+      allow read: if admin() || (accountActive() && resource.data.requesterUid == request.auth.uid);
+      allow create: if approved() && request.resource.data.requesterUid == request.auth.uid && request.resource.data.status == 'pending' && request.resource.data.type in ['donation','transfer'] && exists(/databases/$(database)/documents/winners/$(request.resource.data.winnerId)) && get(/databases/$(database)/documents/winners/$(request.resource.data.winnerId)).data.deliveryStatus == 'pending' && (('ownerUid' in get(/databases/$(database)/documents/winners/$(request.resource.data.winnerId)).data) && get(/databases/$(database)/documents/winners/$(request.resource.data.winnerId)).data.ownerUid == request.auth.uid || get(/databases/$(database)/documents/winners/$(request.resource.data.winnerId)).data.winnerId == request.auth.uid);
+      allow update: if admin() && resource.data.status == 'pending' && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','reviewedBy','reviewedAt']) && request.resource.data.status in ['approved','rejected'];
       allow delete: if false;
     }
     match /ledger/{entryId} { allow read, write: if admin(); }

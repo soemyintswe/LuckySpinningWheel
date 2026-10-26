@@ -192,3 +192,16 @@
 
 - Final verification: `npm run build` succeeded and `git diff --check` passed. Vite continues to show the known large JavaScript bundle advisory (880.14 kB minified). Firestore Rules are deployed as ruleset `f9161782-e785-4736-8e15-ec6fa5fc46e8`.
 - Published Iteration 6 changes to GitHub `main` after verification; commit `ad0ff49` (`Separate account registration from raffle entry`).
+
+### Iteration 7 — clarify navigation, winner choices, and consolation cash (2026-10-26)
+
+- User asked what “အဓိက စီမံခန့်ခွဲမှု” means, and requested clear Admin-wide controls plus donor/participant self-service for winnings: reinvest a prize as a donation or transfer it to another user. Also requested consolation cash either evenly divided or set at a fixed amount, with whole-kyat handling to avoid fractional payouts.
+- Planned changes: inspect navigation labels and winner/donation schemas; rename ambiguous navigation to a direct term; implement winner-submitted prize disposition requests for donation/transfer with Admin review and accounting; add selectable consolation allocation modes (equal whole-MMK split with deterministic remainder handling, or fixed whole-MMK amount) and validate the total does not exceed pool; update Firestore Rules, architecture and README/work log before deploy/push.
+- Security constraints: a winner may request an action only for their own pending prize; recipient must be an active/approved user; donation/transfer requests must preserve original prize audit and cannot double-spend; Admin remains final approver for money custody/accounting. If Spark rules cannot safely support atomic transfer/donation without Functions, document and implement the safest review-based workflow.
+
+- Implemented Iteration 7 UI and accounting changes: renamed workspace “အဓိက စီမံခန့်ခွဲမှု” to “မဲစီမံခန့်ခွဲမှု”; added winner-owned requests to donate a prize back or transfer it to an active approved member by email; Admin review records the custody change and corresponding ledger entries in a Firestore transaction.
+- Added consolation allocation mode: equal whole-MMK split with deterministic remainder kyats assigned to earliest slots, or a fixed whole-MMK amount per slot. Validation multiplies fixed prize amount by quantity and rejects budgets exceeding the cash pool; unused fixed-mode balance remains unallocated.
+- Extended Firestore Rules for requester-only prize request creation/read and Admin-only decision; Admin winner updates can now record transfer/donation ownership and custody status.
+- `npm run build` succeeded (known Vite bundle advisory remains). `git diff --check` passed.
+- Live Rules deployment is pending: Firebase CLI currently has only `mks.edu.services@gmail.com`, which receives HTTP 403 `USER_PROJECT_DENIED` for `luckydraw-mksdev` and lacks `serviceusage.services.use`. `firebase login:add` cannot open interactive auth in this terminal. The new `prizeRequests` flow requires deploying updated `firestore.rules` with the authorized `soemyintswe@gmail.com` account before it is usable in the live Firebase app.
+- Published Iteration 7 source and documentation to GitHub `main` as commit `c9630b4` (`Add winner prize choices and consolation modes`). The Firestore Rules deployment remains pending the authorized CLI account.
