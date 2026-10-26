@@ -46,9 +46,9 @@ App code တွင် သတ်မှတ်ထားသော Firebase/GitHub ac
 
 Firebase Auth ဝင်ထားသူတွင် `admins/{uid}` document မရှိပါက Admin ခွင့်မရပါ။ `.env`, service account/private key, Google OAuth secret များကို GitHub သို့ မတင်ပါနှင့်။
 
-## Deploy: `lucky.mksdev.asia`
+## Deploy: Firebase project `luckydraw-mksdev` and `lucky.mksdev.asia`
 
-`firebase.json` တွင် Hosting rewrite, Firestore rules, Storage rules နှင့် Cloud Functions သတ်မှတ်ထားသည်။ Project owner သည် Firebase CLI မှ project ရွေးပြီး `npm run build`, `firebase deploy` လုပ်ပါ။ Firebase Console > Hosting > Add custom domain တွင် `lucky.mksdev.asia` ထည့်ပြီး ပေးသော verification/DNS records ကို `mksdev.asia` DNS provider တွင် သတ်မှတ်ပါ။ ဤ workspace တွင် project ID, Firebase owner ခွင့်နှင့် DNS access မရှိသဖြင့် live deployment မလုပ်ထားပါ။
+`firebase.json` တွင် Hosting rewrite, Firestore rules, Storage rules နှင့် Cloud Functions သတ်မှတ်ထားသည်။ Firebase CLI ကို `soemyintswe@gmail.com` အကောင့်ဖြင့် ချိတ်ပြီး `luckydraw-mksdev` project ကို ရွေးချယ်ပါ (မရှိသေးလျှင် ဖန်တီးပါ)။ ထို့နောက် `npm run build`, `firebase deploy` လုပ်ပါ။ Project ID သည် တစ်ကမ္ဘာလုံးတွင် မတူညီရပါမည်။ အခြား account က အရင်ပိုင်ထားပြီးဖြစ်ပါက project Owner က `soemyintswe@gmail.com` ကို Owner အဖြစ် ဖိတ်ခေါ်ပေးရပါမည်။ Firebase Console > Hosting > Add custom domain တွင် `lucky.mksdev.asia` ထည့်ပြီး ပေးသော verification/DNS records ကို `mksdev.asia` DNS provider တွင် သတ်မှတ်ပါ။ လက်ရှိကွန်ပျူတာ၏ Firebase CLI သည် `mks.edu.services@gmail.com` ဖြင့် ဝင်ထားသဖြင့် `soemyintswe@gmail.com` OAuth နှင့် project ပိုင်ဆိုင်မှုကို အတည်ပြုပြီး deploy လုပ်ရန် ကျန်ရှိနေပါသည်။
 
 ## Repository guide
 
@@ -61,3 +61,13 @@ Firebase Auth ဝင်ထားသူတွင် `admins/{uid}` document မ�
 ## License
 
 MIT License. See [LICENSE](LICENSE).
+
+## Recurring rounds, prize custody, and reports
+
+- One setup can create 1–24 separate rounds, spaced by a chosen number of days. Each round stores its opening time and draw time; times are entered in the browser's local timezone and stored as ISO timestamps. Entry approval and prize spins are enforced by server time checks. A round without a draw time may be spun any time after opening.
+- Winning a prize reserves it for the winner. It remains in inventory and the cash balance until an Admin marks it transferred. If it cannot be delivered, Admin can reclaim it with a reason; reclaiming an untransferred prize releases the reservation, and reclaiming an already delivered prize posts a ledger return. The original win remains in the winner history.
+- Admin > Reports exports a UTF-8 CSV containing participant entries, donations, prize outcomes/delivery status, and ledger transactions.
+
+## Sign-in providers
+
+Email/password and Google sign-in are implemented. Facebook sign-in is implemented in the UI but requires an owner to enable Facebook in Firebase Authentication and enter the Facebook App ID/secret in Firebase Console. Viber and Telegram details are supported as contact fields; they are not direct Firebase sign-in providers in this app. Direct identity sign-in would require a separately configured, verified custom authentication integration. Do not ask users for Viber/Telegram passwords.

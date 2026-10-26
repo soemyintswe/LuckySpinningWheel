@@ -1,5 +1,48 @@
 # Lucky Spinning Wheel — Project Work Log
 
+## 2026-10-26 — Iteration 3 planned work (recorded before implementation)
+
+### New requirements
+
+- Connect and configure the application with the user's Firebase/Google account `soemyintswe@gmail.com`; user is willing to grant required permissions.
+- Support recurring raffle events, with configurable recurrence count and opening/draw date and time.
+- Add downloadable/printable operational and financial reports.
+- Treat a won prize as owned by the winner but still in inventory until handover is confirmed; support failed contact and prize return/forfeiture with a recorded status and audit trail.
+- Expand registration/sign-in options to email, Facebook, Viber, and Telegram where provider capabilities allow.
+- Continue to record work before making modifications and limit scope to work completable within available context.
+
+### Planned approach
+
+1. Inspect available Firebase/GitHub CLI authentication, current Firebase project linkage, raffle schema, and current admin UI.
+2. Never request or store account passwords, OAuth secrets, or service-account keys in source. If a privileged account consent screen or project selection must be completed by the owner, prepare the exact operation and request the smallest necessary action at that point.
+3. Model recurrences as separate raffle instances generated from a schedule definition, with explicit local timezone and opening/draw timestamps; do not silently alter existing one-off raffles.
+4. Add award delivery lifecycle states and inventory accounting so a win reserves inventory; transfer confirmation removes the reservation, while cancellation/return restores available inventory and preserves history.
+5. Add admin-facing reports with CSV export for raffle participation, award outcomes/delivery, donations, and cash/goods ledger totals.
+6. Add Facebook OAuth only if provider config can be safely completed. Treat Viber/Telegram as contact/identity verification or link-based onboarding unless a supported Firebase Auth provider/integration is configured; do not imply direct sign-in when no provider credentials exist.
+7. Update README, architecture, security notes, and this log before committing and pushing to the user-requested GitHub repository.
+
+### Access check pending
+
+- The previously linked Firebase project ID, project owner permissions, OAuth provider credentials, custom-domain DNS access, and Firebase CLI session have not yet been verified in this iteration.
+- No implementation edits have been made for iteration 3 at the time this plan was recorded.
+
+### Progress — iteration 3 implementation
+
+- Firebase CLI is installed (`15.32.1`) but its current authorized account is `mks.edu.services@gmail.com`, not the requested `soemyintswe@gmail.com`. The existing CLI account can see `mks-certificate-app`, `mks-certificate-app-cbf64`, `mks-education-hub`, and `teahouse-hybrid`; none is assumed to be the Lucky Wheel project. An async question is pending asking whether to create a dedicated `lucky-spinning-wheel` Firebase project or deliberately select one existing project. No Firebase resources have been changed.
+- `firebase login:add --no-localhost soemyintswe@gmail.com` could not launch in this non-interactive terminal. Do not use the currently authorized `mks.edu.services@gmail.com` account to create or deploy resources for `soemyintswe@gmail.com` without explicit project ownership/access.
+- After trying the Firebase CLI reauthentication flow, it failed before browser consent with `Failed to make request to https://auth.firebase.tools/attest`. The selected target is now `luckydraw-mksdev`, per user, but this target is not visible in the currently authenticated account's project list. Project existence/ownership and required OAuth login remain blocked on correct account access.
+- Added recurrence creation for 1–24 independent raffle rounds at a configurable day interval, with local datetime inputs persisted as ISO timestamps. Backend entry approval and spin callables enforce opening/draw time; UI refreshes schedule status periodically.
+- Added prize custody statuses. A win now reserves its prize without reducing ledger stock; Admin marks delivery to post the cash/goods outflow. Reclaiming a pending prize releases the reservation; reclaiming a delivered prize requires a reason and records an inventory return. Historical wins remain, and the prize slot stays consumed in its original draw.
+- Added an Admin CSV reports page for participant, donation, award/delivery, and ledger rows. Added Facebook popup sign-in UI (Firebase provider/App credentials still need console setup), and Viber/Telegram contact fields at registration. Direct Viber/Telegram authentication remains unavailable without an external verified custom-auth integration.
+- Documentation has been extended for recurrence, delivery accounting, reports, and provider setup. Final verification, review of account/project choice, and push are pending.
+
+### Iteration 3 verification and remaining external setup
+
+- `npm run build` succeeded after the implementation; the only warning is Vite's existing single bundle over 500 kB.
+- `node --check functions/index.js` passed. Root and Functions `npm audit --omit=dev` each reported 0 vulnerabilities. `git diff --check` reported no whitespace errors.
+- Firebase Console/Hosting, Auth providers, Firestore/Storage, custom domain DNS, and Functions have not been deployed. No `.env` or service-account key was created or committed.
+- To finish Firebase connection, authenticate the Firebase CLI as `soemyintswe@gmail.com` (or add the current CLI principal `mks.edu.services@gmail.com` as Owner to project `luckydraw-mksdev` in Firebase IAM). Then verify/create that exact project and configure the Web app, Google/Facebook Auth providers, billing, Storage, Firestore, and Hosting domain. Do not commit `.env` or OAuth/service-account secrets.
+
 ## 2026-10-26 — Iteration 2 planned work (recorded before implementation)
 
 ### Request

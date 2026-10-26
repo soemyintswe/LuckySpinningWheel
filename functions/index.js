@@ -17,19 +17,21 @@ exports.spinRaffle = onCall({ region: 'asia-southeast1', maxInstances: 4 }, asyn
   const raffleRef = db.collection('raffles').doc(raffleId)
   const attemptRef = raffleRef.collection('spinAttempts').doc(spinId)
   const winnerRef = db.collection('winners').doc()
-  const ledgerRef = db.collection('ledger').doc()
   let result
 
   await db.runTransaction(async tx => {
     const prior = await tx.get(attemptRef)
     if (prior.exists) { result = prior.data().result; return }
     const raffleSnap = await tx.get(raffleRef)
-    if (!raffleSnap.exists || raffleSnap.data().status !== 'active') throw new HttpsError('failed-precondition', 'မဲအစီအစဉ် ဖွင့်ထားခြင်း မရှိပါ။')
+    if (!raffleSnap.exists || !['active','scheduled'].includes(raffleSnap.data().status)) throw new HttpsError('failed-precondition', 'မဲအစီအစဉ် ဖွင့်ထားခြင်း မရှိပါ။')
     const [entriesSnap, winnersSnap] = await Promise.all([
       tx.get(db.collection('participants').where('raffleId', '==', raffleId).where('status', '==', 'approved')),
       tx.get(db.collection('winners').where('raffleId', '==', raffleId))
     ])
     const raffle = raffleSnap.data()
+    const now = Date.now()
+    if (raffle.openAt && now < Date.parse(raffle.openAt)) throw new HttpsError('failed-precondition', 'မဲဖွင့်ချိန် မရောက်သေးပါ။')
+    if (raffle.drawAt && now < Date.parse(raffle.drawAt)) throw new HttpsError('failed-precondition', 'သတ်မှတ်ထားသော ဖောက်မည့်အချိန် မရောက်သေးပါ။')
     const entries = entriesSnap.docs.map(d => ({ id:d.id, ref:d.ref, data:d.data(), remaining:Math.max(0,(Number(d.data().ticketCount)||0)-(Number(d.data().spinsUsed)||0)) })).filter(e => e.remaining > 0)
     if (!entries.length) throw new HttpsError('failed-precondition', 'အသုံးပြုနိုင်သော မဲလှည့်ခွင့် မရှိတော့ပါ။')
     let chosen
@@ -83,18 +85,12 @@ exports.spinRaffle = onCall({ region: 'asia-southeast1', maxInstances: 4 }, asyn
       spinsLeft:Math.max(0,(Number(person.ticketCount)||0)-(Number(person.spinsUsed)||0)-1)
     }
     const attempt={...result,userId:person.userId,raffleId,createdAt:FieldValue.serverTimestamp()}
-    const awardedCash=winnersSnap.docs.reduce((n,d)=>n+(d.data().prizeType==='cash'?Number(d.data().prizeValue)||0:0),0)+(prize?.valueType==='cash'?prize.value:0)
+    const awardedCash=winnersSnap.docs.reduce((n,d)=>n+(d.data().deliveryStatus==='delivered'&&d.data().prizeType==='cash'?Number(d.data().prizeValue)||0:0),0)
     tx.update(chosen.ref,{spinsUsed:result.spinsUsed})
     tx.update(raffleRef,{drawLocked:true,drawSlots:slots,drawSpinsUsed:(Number(raffle.drawSpinsUsed)||0)+1,remainingCash:Math.max(0,cashPool-awardedCash)})
     if(prize){
-      const winner={...attempt,prizeIndex:prize.prizeIndex,prizeSlotId:prize.prizeSlotId,prizeName:prize.name||'ဆု',prizeItem:prize.item||'',prizeValue:prize.value,prizeType:prize.valueType,prizeImage:prize.imageUrl||'',winnerName:person.name||'အမည်မသိ',winnerImage:person.avatarUrl||'',createdBy:uid}
+      const winner={...attempt,prizeIndex:prize.prizeIndex,prizeSlotId:prize.prizeSlotId,prizeName:prize.name||'ဆု',prizeItem:prize.item||'',prizeValue:prize.value,prizeQuantity:prize.quantity||1,prizeType:prize.valueType,prizeImage:prize.imageUrl||'',winnerName:person.name||'အမည်မသိ',winnerImage:person.avatarUrl||'',deliveryStatus:'pending',deliveryHistory:[{status:'awarded',at:new Date().toISOString(),by:uid}],createdBy:uid}
       tx.create(winnerRef,winner)
-      if(winner.prizeValue>0||winner.prizeType!=='cash') tx.create(ledgerRef,{
-        direction:'out',assetType:winner.prizeType==='cash'?'cash':'goods',itemLabel:winner.prizeItem||winner.prizeName,
-        amount:winner.prizeValue,quantity:winner.prizeType==='cash'?0:prize.quantity,
-        unitValue:winner.prizeValue/(winner.prizeType==='cash'?1:prize.quantity),source:'prize',relatedId:winnerRef.id,
-        createdBy:uid,createdAt:FieldValue.serverTimestamp()
-      })
     }
     tx.create(attemptRef,{...attempt,result})
   })
@@ -117,9 +113,11 @@ exports.reviewEntry = onCall({ region: 'asia-southeast1', maxInstances: 2 }, asy
     if (status === 'rejected') { tx.update(entryRef, { status }); return }
     const raffleRef = db.collection('raffles').doc(String(entry.raffleId || ''))
     const raffleSnap = await tx.get(raffleRef)
-    if (!raffleSnap.exists || raffleSnap.data().status !== 'active') throw new HttpsError('failed-precondition', 'မဲအစီအစဉ် မဖွင့်ထားပါ။')
+    if (!raffleSnap.exists || !['active','scheduled'].includes(raffleSnap.data().status)) throw new HttpsError('failed-precondition', 'မဲအစီအစဉ် မဖွင့်ထားပါ။')
     if (raffleSnap.data().drawLocked) throw new HttpsError('failed-precondition', 'မဲလှည့်ပြီးပါပြီ။ နောက်ထပ်စာရင်းကို ခွင့်မပြုတော့ပါ။')
     const raffle = raffleSnap.data()
+    if (raffle.openAt && Date.now() < Date.parse(raffle.openAt)) throw new HttpsError('failed-precondition', 'မဲစာရင်းဖွင့်ချိန် မရောက်သေးပါ။')
+    if (raffle.drawAt && Date.now() > Date.parse(raffle.drawAt)) throw new HttpsError('failed-precondition', 'မဲစာရင်းပိတ်ပြီးပါပြီ။')
     const count = Math.max(0, Number(entry.ticketCount) || 0)
     if ((Number(raffle.ticketCount) || 0) + count > (Number(raffle.maxTickets) || 0)) throw new HttpsError('resource-exhausted', 'လက်ကျန်မဲအရေအတွက် မလုံလောက်ပါ။')
     tx.update(entryRef, { status })
@@ -128,6 +126,40 @@ exports.reviewEntry = onCall({ region: 'asia-southeast1', maxInstances: 2 }, asy
     if (ticketIncome > 0) tx.create(db.collection('ledger').doc(), { direction:'in', assetType:'cash', itemLabel:`မဲလက်မှတ် · ${raffle.title || ''}`, amount:ticketIncome, quantity:0, unitValue:ticketIncome, source:'ticket', relatedId:entryId, createdBy:request.auth.uid, createdAt:FieldValue.serverTimestamp() })
   })
   return { status }
+})
+
+exports.updatePrizeDelivery = onCall({ region: 'asia-southeast1', maxInstances: 2 }, async request => {
+  if (!request.auth) throw new HttpsError('unauthenticated', 'အကောင့်ဝင်ရန် လိုအပ်ပါသည်။')
+  const uid=request.auth.uid
+  if (!(await db.collection('admins').doc(uid).get()).exists) throw new HttpsError('permission-denied', 'Admin ခွင့်ပြုချက်လိုအပ်သည်။')
+  const winnerId=String(request.data?.winnerId||''), status=request.data?.status, reason=String(request.data?.reason||'').trim()
+  if (!winnerId || !['delivered','reclaimed'].includes(status)) throw new HttpsError('invalid-argument','ဆုလွှဲပြောင်းမှု အခြေအနေ မမှန်ပါ။')
+  if (status==='reclaimed' && reason.length<3) throw new HttpsError('invalid-argument','ဆုကို ပြန်သိမ်းရသည့် အကြောင်းပြချက်ကို ထည့်ပါ။')
+  const winnerRef=db.collection('winners').doc(winnerId), ledgerInRef=db.collection('ledger').doc(), ledgerOutRef=db.collection('ledger').doc()
+  await db.runTransaction(async tx=>{
+    const winnerSnap=await tx.get(winnerRef)
+    if(!winnerSnap.exists) throw new HttpsError('not-found','ဆုရရှိသူ မတွေ့ပါ။')
+    const winner=winnerSnap.data(), current=winner.deliveryStatus||'pending'
+    if(current===status) return
+    if(current==='reclaimed') throw new HttpsError('failed-precondition','ပြန်လည်သိမ်းဆည်းပြီးသော ဆုကို ပြန်ဖွင့်၍မရပါ။')
+    if(status==='delivered'&&current!=='pending') throw new HttpsError('failed-precondition','ဤဆုကို လွှဲပြောင်းပြီးဖြစ်သည်။')
+    const raffleRef=db.collection('raffles').doc(String(winner.raffleId||''))
+    const raffleSnap=await tx.get(raffleRef)
+    const records=await tx.get(db.collection('winners').where('raffleId','==',winner.raffleId))
+    const previouslyDelivered=records.docs.reduce((n,d)=>n+(d.id!==winnerId&&d.data().deliveryStatus==='delivered'&&d.data().prizeType==='cash'?Number(d.data().prizeValue)||0:0),0)
+    const value=Math.max(0,Number(winner.prizeValue)||0), isCash=winner.prizeType==='cash'
+    const isGoods=!isCash
+    const itemLabel=winner.prizeItem||winner.prizeName||'ဆု'
+    const history=[...(winner.deliveryHistory||[]),{status,reason:reason||'',at:new Date().toISOString(),by:uid}]
+    tx.update(winnerRef,{deliveryStatus:status,deliveryHistory:history,deliveryUpdatedAt:FieldValue.serverTimestamp(),deliveryReason:reason||''})
+    if(status==='delivered'&&(value>0||isGoods)) tx.create(ledgerOutRef,{direction:'out',assetType:isCash?'cash':'goods',itemLabel,amount:value,quantity:isCash?0:Number(winner.prizeQuantity||1),unitValue:value/(isCash?1:Number(winner.prizeQuantity||1)),source:'prize',relatedId:winnerId,createdBy:uid,createdAt:FieldValue.serverTimestamp()})
+    if(status==='reclaimed'&&current==='delivered'&&(value>0||isGoods)) tx.create(ledgerInRef,{direction:'in',assetType:isCash?'cash':'goods',itemLabel,amount:value,quantity:isCash?0:Number(winner.prizeQuantity||1),unitValue:value/(isCash?1:Number(winner.prizeQuantity||1)),source:'prize_return',relatedId:winnerId,createdBy:uid,createdAt:FieldValue.serverTimestamp(),note:reason})
+    if(raffleSnap.exists&&isCash){
+      const deliveredTotal=previouslyDelivered+(current==='delivered'?-value:0)+(status==='delivered'?value:0)
+      tx.update(raffleRef,{remainingCash:Math.max(0,(Number(raffleSnap.data().cashPool)||0)-deliveredTotal)})
+    }
+  })
+  return {status}
 })
 
 exports.reviewDonation = onCall({ region: 'asia-southeast1', maxInstances: 2 }, async request => {
