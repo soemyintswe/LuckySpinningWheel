@@ -29,7 +29,7 @@
 5. Let an authorized organizer operate the same round, inspect the wheel and results, and manage rounds/prize allocation. Avoid duplicate prizes under concurrent requests.
 6. Add a transparent fixed-prize-plus-equal-consolation calculation: reserve configured fixed awards first, divide the remaining pool among consolation slots using integer kyats, distribute any remainder kyats deterministically, and reject settings whose awards exceed the available pool. Show the calculation before publishing.
 7. Refresh the wheel and draw UI with colorful, clear entrant/organizer states and clear remaining chances/results.
-8. Complete GitHub-ready files and setup instructions. Check for an available authorized GitHub connection; do not publish or create an external repository unless the account/tool is connected and the user has authorized that destination.
+8. Complete GitHub-ready files and setup instructions. Check for an available authorized GitHub connection and publish to the user's requested account.
 9. Build the frontend and perform syntax/dependency checks. Record exact results and any remaining external setup.
 
 ### Design/security decisions
@@ -57,4 +57,13 @@
 - Earlier frontend build was successful after the UI and auth changes; final build and Functions checks still need rerunning after docs/rules work.
 - Firestore and Storage rules need final review. Emulator integration tests have not been added or run.
 - Firebase project config/domain access were not supplied, so deployment remains an owner action.
-- GitHub repository creation/push remains after code and docs are ready.
+- Published repository: https://github.com/soemyintswe/LuckySpinningWheel (public, `main`). Initial implementation commit: `ac0e628`.
+- Verification: `npm run build` succeeded (Vite reports one >500 kB chunk advisory); `node --check functions/index.js` passed; root and `functions` `npm audit --omit=dev` both reported 0 vulnerabilities; `git diff --cached --check` found only trailing blank lines at EOF in README and main.jsx, cleaned in follow-up.
+
+### Handover and deployment state
+
+- Git author and GitHub repository owner are `Soe Myint Swe` / `soemyintswe@gmail.com` (`soemyintswe`). The repository is public and connected to `origin` on `main`.
+- No Firebase project ID, Firebase owner credentials, or DNS access were supplied. `lucky.mksdev.asia` is documented as the intended custom domain, but hosting, Functions, Auth provider, Firestore, Storage, and DNS have not been deployed/configured.
+- Before production use, create/select a Firebase project, configure the web app environment, enable Google and email providers, bootstrap an owner-controlled `admins/{uid}` document, then deploy rules/functions/hosting. Storage rules that consult Firestore require the Storage-to-Firestore permissions prompt to be enabled in Firebase.
+- No emulator/security integration tests were run. Build and syntax checks do not substitute for a live Firebase rules/emulator review. Production security review and operational verification remain the deploying owner's responsibility.
+- The UI can be previewed locally with `npm run dev`; first-time Firebase configuration is required for auth-backed use.

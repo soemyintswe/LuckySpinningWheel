@@ -61,5 +61,3 @@ Firebase Auth ဝင်ထားသူတွင် `admins/{uid}` document မ�
 ## License
 
 MIT License. See [LICENSE](LICENSE).
-
-

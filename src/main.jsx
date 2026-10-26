@@ -137,5 +137,3 @@ function PeopleTable({people,isAdmin,onStatus}){return people.length?<div classN
 function Field({label,value,onChange,type='text',required=false,min,max}){return <label className="field"><span>{label}{required&&<i> *</i>}</span><input type={type} step={type==='number'?1:undefined} min={min} max={max} required={required} value={value} onChange={e=>onChange(e.target.value)} placeholder={type==='date'?'':`${label} ဖြည့်ပါ`}/></label>}
 
 createRoot(document.getElementById('root')).render(<App/>)
-
-
