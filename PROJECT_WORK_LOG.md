@@ -40,6 +40,7 @@
 
 - `npm run build` succeeded after the implementation; the only warning is Vite's existing single bundle over 500 kB.
 - `node --check functions/index.js` passed. Root and Functions `npm audit --omit=dev` each reported 0 vulnerabilities. `git diff --check` reported no whitespace errors.
+- GitHub Actions `Verify` passed on commit `a98d622`, including frontend build, both production dependency audits, and Functions syntax check.
 - Firebase Console/Hosting, Auth providers, Firestore/Storage, custom domain DNS, and Functions have not been deployed. No `.env` or service-account key was created or committed.
 - To finish Firebase connection, authenticate the Firebase CLI as `soemyintswe@gmail.com` (or add the current CLI principal `mks.edu.services@gmail.com` as Owner to project `luckydraw-mksdev` in Firebase IAM). Then verify/create that exact project and configure the Web app, Google/Facebook Auth providers, billing, Storage, Firestore, and Hosting domain. Do not commit `.env` or OAuth/service-account secrets.
 
