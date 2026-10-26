@@ -36,3 +36,7 @@
 .account-panel .image-upload{margin:0 auto 12px;width:min(100%,260px)}
 .account-panel .image-url-preview{width:64px;height:64px;border-radius:50%;margin:0 auto}
 .account-panel .image-url-hint{display:none}
+
+/* Account moderation and points controls */
+.account-management{margin-top:16px}.account-management-list{display:grid;margin-top:12px}.account-management-row{display:flex;align-items:center;gap:10px;padding:12px 0;border-top:1px solid #f1efeb;min-width:0}.account-management-info{display:grid;gap:4px;flex:1;min-width:0}.account-management-info>b{font-size:11px;color:#444151}.account-management-info>small{font-size:9px;color:#96929c;overflow-wrap:anywhere}.account-management-actions{display:flex;align-items:center;justify-content:flex-end;gap:6px;flex-wrap:wrap}.danger-outline{color:#c9635d!important;border-color:#f0d8d4!important}.entry-profile{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid #f0ece7;border-radius:9px;background:#fffcf8}.entry-profile>span:last-child{display:grid;gap:4px;min-width:0}.entry-profile b{font-size:11px;color:#474352}.entry-profile small{font-size:9px;color:#9b96a0;overflow-wrap:anywhere}
+@media(max-width:620px){.account-management-row{align-items:flex-start;flex-wrap:wrap}.account-management-info{min-width:calc(100% - 50px)}.account-management-actions{width:100%;justify-content:flex-start;margin-left:40px}.account-management-actions .btn{padding:7px 8px;font-size:9px}}

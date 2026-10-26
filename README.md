@@ -1,10 +1,13 @@
 # Lucky Spinning Wheel
 
-မြန်မာဘာသာဖြင့် ကံစမ်းမဲအစီအစဉ်များ ဖန်တီးခြင်း၊ register/အတည်ပြုခြင်း၊ ဆု wheel လှည့်ခြင်းနှင့် ငွေ/ပစ္စည်းစာရင်း၊ report ထုတ်ခြင်းတို့ ပါဝင်သော React + Firebase app ဖြစ်သည်။ လက်ရှိ setup ကို Firebase Spark အခမဲ့အစီအစဉ်နှင့် အသုံးပြုရန် ပြင်ဆင်ထားသည်။
+မြန်မာဘာသာဖြင့် ကံစမ်းမဲအစီအစဉ်များ ဖန်တီးခြင်း၊ အသင်းဝင်အကောင့်ကို တစ်ကြိမ်ဖွင့်၍ အတည်ပြုခြင်း၊ မဲအစီအစဉ်တစ်ခုစီတွင် ကံစမ်းခွင့်ရယူခြင်း၊ ဆုဘီးလှည့်ခြင်းနှင့် ငွေ/ပစ္စည်းစာရင်း၊ အစီရင်ခံစာ ထုတ်ခြင်းတို့ ပါဝင်သော React + Firebase app ဖြစ်သည်။ လက်ရှိ setup ကို Firebase Spark အခမဲ့အစီအစဉ်အတွက် ပြင်ဆင်ထားသည်။
 
 ## ပါဝင်သည့်လုပ်ဆောင်ချက်များ
 
 - Email/password နှင့် Google account sign-in. အသစ်စာရင်းသွင်းသူများကို Admin က အတည်ပြုသည်။
+- အကောင့်ကို တစ်ကြိမ်သာဖွင့်ပြီး Admin အတည်ပြုပြီးနောက် မဲအစီအစဉ်တစ်ခုစီတွင် ကံစမ်းခွင့် သီးခြားတောင်းနိုင်သည်။ အကောင့်ဖွင့်ခြင်းနှင့် မဲဝင်ခြင်းကို သီးခြားထားသည်။
+- မဲအစီအစဉ်အသစ်တိုင်း၏ မူလရွေးချယ်မှုမှာ အခမဲ့လက်ဆောင်မဲဖြစ်သည်။ Admin က မဲလက်မှတ်ရောင်းချမှု သို့မဟုတ် Promotion ပွိုင့်/ကူပွန်ပုံစံကို ရွေးနိုင်သည်။ ငွေပေးချေမှုနှင့် ကူပွန်ကို Admin ကိုယ်တိုင်စစ်ဆေးအတည်ပြုသည်။
+- Promotion မဲတွင် သတ်မှတ်ထားသော ပွိုင့်လက်ကျန်ကို ကံစမ်းခွင့်အတည်ပြုချိန်တွင် ဖြတ်တောက်သည်။ ကုန်ပစ္စည်းဝယ်ယူမှု/ကူပွန်ပြီးနောက် Admin က အသင်းဝင်အကောင့်တွင် ပွိုင့်ထည့်/နုတ်နိုင်သည်။ ကူပွန်ကုဒ်သည် စစ်ဆေးရန်အထောက်အထားအဖြစ်သိမ်းမည်; ဆိုင်ရောင်းစနစ်မှ အလိုအလျောက်အတည်ပြုခြင်း မပါဝင်ပါ။
 - မဲအစီအစဉ်ကို တစ်ကြိမ်တည်း သို့မဟုတ် သတ်မှတ်ထားသည့် အကြိမ်ရေ၊ ရက်ကွာခြားမှု၊ ဖွင့်ချိန်/ဖောက်ချိန်ဖြင့် ဖန်တီးနိုင်သည်။
 - ငွေသားဆုကန်၊ ပုံသေဆုအဆင့်၊ ပစ္စည်းတန်ဖိုး၊ အရေအတွက်၊ နှစ်သိမ့်ဆုအရေအတွက် သတ်မှတ်နိုင်သည်။ ပုံသေငွေဆုများနုတ်ပြီး ကျန်ငွေကို နှစ်သိမ့်ဆုများအကြား ကျပ်ပြည့်ညီမျှ ခွဲဝေပေးသည်။
 - အတည်ပြုထားသော မဲစာရင်းတစ်ခု၏ `ticketCount` သည် လှည့်ခွင့်အများဆုံးဖြစ်သည်။ Firestore transaction တစ်ခုစီတွင် `spinsUsed` နှင့် မဲဖောက်ကြိမ်ရေကို တစ်ပြိုင်နက်တိုးစေပြီး `claimedSlots` ဖြင့် ဆုတစ်ဆုကို တစ်ကြိမ်သာရစေသည်။
@@ -12,36 +15,36 @@
 - အလှူရှင်၊ ပစ္စည်း၊ ကံစမ်းသူ၊ မဲအစီအစဉ်နှင့် ဆုများအတွက် image URL ထည့်နိုင်သည်။ Google Drive အပါအဝင် အများကြည့်နိုင်သော direct image URL သာလိုအပ်သည်။ ဤ app သည် ပုံ upload မလုပ်ပါ။
 - Admin report ကို UTF-8 CSV အဖြစ် download လုပ်နိုင်သည်။
 
-## မဲဖောက်မှု fairness болон security хязгаарлалт
+## မဲဖောက်မှု တရားမျှတမှုနှင့် လုံခြုံရေးကန့်သတ်ချက်
 
 Client သည် `crypto.getRandomValues()` ကိုသုံး၍ ရလဒ်ရွေးကာ Firestore transaction ကိုရေးသည်။ Security Rules က အတည်ပြုထားသော မဲစာရင်း၊ တစ်ကြိမ်လျှင် ခွင့်တစ်ကြိမ်သာလျှော့ခြင်း၊ သတ်မှတ်ထားသည့် အများဆုံးအကြိမ်နှင့် ဆုတစ်ဆုထပ်မရခြင်းတို့ကို စစ်ဆေးသည်။ သို့သော် Spark တွင် Cloud Functions မသုံးသဖြင့် ပြုပြင်ထားသော browser က random ရလဒ်ကို လှည့်စားနိုင်သည်။ ထို့ကြောင့် ဤဗားရှင်းကို **server ဘက်မှ အတည်ပြုထားသော၊ လိမ်လည်ပြင်ဆင်မှုမဖြစ်နိုင်သော မဲဖောက်စနစ်ဟု မယူဆရပါ**။ တန်ဖိုးမြင့် သို့မဟုတ် အများပြည်သူဆိုင်ရာ မဲဖောက်မှုအတွက် server ဘက်မှ မဲဖောက်ခြင်း သို့မဟုတ် လွတ်လပ်စွာစစ်ဆေးနိုင်သော ဝန်ဆောင်မှု လိုအပ်သည်။
 
 ## Local development
 
-Тохиргоо: Node.js 22 LTS, npm. Firebase Auth болон Firestore ашиглана. Functions, Storage bucket, төлбөрийн холболт шаардлагагүй.
+လိုအပ်ချက်များ: Node.js 22 LTS နှင့် npm. Firebase Authentication နှင့် Cloud Firestore ကိုသုံးသည်။ Cloud Functions, Storage bucket သို့မဟုတ် Billing မလိုပါ။
 
-1. Dependencies татах: `npm ci`
-2. `.env.example`-ээс `.env` үүсгээд Firebase Web config (`VITE_FIREBASE_*`) утгуудаа бөглөнө. `.env`-ийг GitHub-д commit хийж болохгүй.
-3. Firebase Console-д Email/Password, Google providers-ийг идэвхжүүлж Firestore database, rules-ийг тохируулна. `lucky.mksdev.asia`-г ашиглах бол Auth authorized domains-д нэмнэ.
-4. Анхны owner/admin хэрэглэгчээр нэвтэрсний дараа Firestore Console-д зөв хэрэглэгчийн UID дор `admins/{UID}` document үүсгэнэ. Үүнийг зөвхөн project owner удирдана.
-5. Rules/indexes: `firebase deploy --only firestore:rules,firestore:indexes`
-6. Local app: `npm run dev` (ихэвчлэн `http://localhost:5173`). Build: `npm run build`.
+1. Dependencies တပ်ဆင်ရန် `npm ci` ကိုလုပ်ပါ။
+2. `.env.example` ကို `.env` အဖြစ်ကူးပြီး Firebase Web config (`VITE_FIREBASE_*`) ထည့်ပါ။ `.env` ကို GitHub သို့ မတင်ပါနှင့်။
+3. Firebase Console တွင် Email/Password နှင့် Google provider ကိုဖွင့်ပြီး Firestore database နှင့် rules သတ်မှတ်ပါ။ `lucky.mksdev.asia` သုံးမည်ဆိုလျှင် Auth authorized domains ထဲထည့်ပါ။
+4. ပထမဆုံး Admin ဖြင့် အကောင့်ဖွင့်ပြီးနောက် Firestore Console တွင် `admins/{UID}` document ကို ပိုင်ရှင်က ဖန်တီးပါ။
+5. Rules/indexes တင်ရန် `firebase deploy --only firestore:rules,firestore:indexes` ကိုသုံးပါ။
+6. Local app ကို `npm run dev` ဖြင့်ဖွင့်ပါ (ပုံမှန် `http://localhost:5173`)။ Production build စစ်ရန် `npm run build` ကိုလုပ်ပါ။
 
-Firebase web API key нь browser config бөгөөд `.env`-д байх нь хэвийн; Firestore Rules нь өгөгдлийг хамгаалах гол хил юм. Service account key, OAuth secret болон нууц credential-уудыг repository-д хэзээ ч бүү оруул.
+Firebase Web API key သည် browser တွင် အသုံးပြုသည့် configuration ဖြစ်၍ `.env` ထဲတွင်ထားနိုင်သည်။ ဒေတာကာကွယ်မှုကို Firestore Rules က ဆောင်ရွက်သည်။ Service account key၊ OAuth secret နှင့် အခြားလျှို့ဝှက်အချက်အလက်များကို repository ထဲသို့ မတင်ပါနှင့်.
 
-## Зураг оруулах
+## ပုံထည့်သွင်းခြင်း
 
-Зургийг Google Drive эсвэл өөр HTTPS хостод байршуулж, “anyone with the link” харах эрхтэй URL-ийг оруулна. Drive link-ийг thumbnail URL руу хувиргахыг оролдоно. Хост зураг харуулахыг хориглосон, link өөрчлөгдсөн, эсвэл нууцлалтай болсон тохиолдолд зураг харагдахгүй. Image URL нь public бол түүнд хамаарах зургийг бусад хэрэглэгч үзэж болно.
+ပုံကို Google Drive သို့မဟုတ် HTTPS ပုံသိမ်းဆည်းရာတွင်ထားပြီး link ရှိသူတိုင်းကြည့်နိုင်သော URL ကိုထည့်ပါ။ Drive link ကို ပုံပြသနိုင်သည့် thumbnail URL အဖြစ်ပြောင်းပေးရန် ကြိုးစားသည်။ ပုံလက်ခံသည့်ဝန်ဆောင်မှုက embed ခွင့်မပြုခြင်း၊ link ပြောင်းလဲခြင်း သို့မဟုတ် private ဖြစ်နေခြင်းတို့ကြောင့် ပုံမပေါ်နိုင်ပါ။ Public URL ထည့်ထားသောပုံကို အခြားအသုံးပြုသူများလည်း မြင်နိုင်သည်။
 
-## Project handover
+## ပရောဂျက်လွှဲပြောင်းခြင်း
 
-Шинэ эзэмшигч Firebase project дээрээ Auth providers, Firestore database/rules/indexes, authorized domains болон өөрийн `.env` тохируулна. Admin UID-г зөвхөн project owner үүсгэнэ. Custom domain шилжүүлэхийн тулд Firebase Hosting domain болон DNS эзэмшигчийн эрхийг тусад нь тохируулна. GitHub repository-г account-аар fork эсвэл transfer хийж болно. Өөр хүний Firebase project рүү `.env`-г дамжуулахгүй; шинэ project-ийн Web config-оор сольж хэрэглэнэ.
+ပရောဂျက်အသစ်ပိုင်ရှင်သည် မိမိ Firebase project တွင် Authentication provider၊ Firestore database/rules/indexes၊ authorized domain နှင့် `.env` ကို သတ်မှတ်ရမည်။ ပထမဆုံး Admin UID ကို project ပိုင်ရှင်ကသာ ဖန်တီးပါ။ Custom domain အတွက် Firebase Hosting နှင့် DNS ပိုင်ဆိုင်ခွင့်ကို သီးခြားလွှဲပြောင်းပါ။ GitHub repository ကို fork သို့မဟုတ် transfer လုပ်နိုင်သည်။ `.env` ကို အခြားသူထံပို့ခြင်းမပြုဘဲ Firebase Web config အသစ်ဖြင့် ပြန်သတ်မှတ်ပါ။
 
 ## Repository files
 
 - `src/main.jsx`, `src/style.css`: UI болон Firebase client logic.
 - `firestore.rules`, `firestore.indexes.json`: data access болон query indexes.
-- `functions/`: хуучин server-side хувилбарын source; Spark deployment-д ашиглахгүй.
-- `PROJECT_WORK_LOG.md`: хөгжүүлэлт, сонголт, хязгаарлалт болон дараагийн ажлын тэмдэглэл.
-- `docs/ARCHITECTURE.md`: collection загвар болон draw transaction.
-- `LICENSE`, `CONTRIBUTING.md`, `SECURITY.md`: repository governance.
+- `functions/`: ယခင် server-side ဗားရှင်းအတွက် source ဖြစ်ပြီး Spark deployment တွင် အသုံးမပြုပါ။
+- `PROJECT_WORK_LOG.md`: ဖွံ့ဖြိုးတိုးတက်မှု၊ ဆုံးဖြတ်ချက်များ၊ ကန့်သတ်ချက်များနှင့် နောက်ဆက်တွဲလုပ်ငန်းမှတ်တမ်း။
+- `docs/ARCHITECTURE.md`: collection ပုံစံနှင့် မဲဖောက် transaction။
+- `LICENSE`, `CONTRIBUTING.md`, `SECURITY.md`: repository စီမံခန့်ခွဲမှုဖိုင်များ။

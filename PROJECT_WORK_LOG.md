@@ -175,3 +175,20 @@
 - Closed the account dialog on sign-out and added a signed-out landing page with sign-in/register choices. Successful email sign-in/register closes the auth dialog; signed-out users no longer see the management dashboard.
 - Replaced the large empty image tile with an optional, compact URL field and a small preview only when a link is supplied. The fields wrap within narrow prize/donation forms; a profile image can be cleared.
 - Verification: `npm run build` and `git diff --check` passed. Vite continues to show the known large-JS-chunk advisory; no build errors.
+
+### Iteration 6 — separate membership from raffle entry (2026-10-26)
+
+- User feedback: the action currently labeled as registration actually creates a raffle entry, which is confused with creating an account. They want a one-time account, then separate participation for each raffle. Free gift/commemorative draws should be the default; ticket sales and promotion points/coupons should also be supported. Admin should suspend or remove accounts.
+- Planned changes: rename participant action and form copy to “claim/get raffle chance”; add per-raffle entry mode defaulting to free, with paid ticket and points/coupon promotion options; keep account registration in its own auth flow and allow an existing account to join multiple raffles.
+- Add account status controls for Admin (active, suspended, deleted). In Spark/no Functions mode, “delete” will be an irreversible-in-app soft deletion/anonymization and Firestore Rules deny future activity; the Firebase Auth identity itself is not physically removed by client code. State this limitation clearly and keep an audit record.
+- Update Firestore rules to require active account status for participant actions, prevent suspended/deleted users from entering or spinning, update README/architecture, run build/rules compile, and push changes to GitHub.
+- Implemented a free (default), paid ticket, and points/promotion entry mode on each raffle. Paid entries require transfer details and create income ledger rows only after Admin approval. Points entries show the requested point total, can include a coupon/reference, and deduct points on Admin approval after account balance validation.
+- Added Admin point balance adjustments with a `pointLedger` audit collection. Coupon/product claims are manually verified by Admin and credited as points; this Spark release does not integrate an external store or automatically redeem vendor coupons.
+- Renamed raffle entry actions and modal to “ကံစမ်းခွင့်ရယူရန်”. The separate membership registration explicitly says it is one-time; entry requests reuse profile identity/contact, select a raffle, and create a deterministic `{uid}_{raffleId}` record so one account cannot submit duplicate entries for the same raffle but can enter later raffles.
+- Added Admin account list with approve, suspend/reactivate, point adjustment, and soft-delete actions. Suspension/deletion signs out the affected client and Firestore Rules deny new entries and profile edits while inactive. Soft deletion clears profile/contact fields but retains historical raffle snapshots for audit. Firebase Authentication itself is not physically deleted/disabled from client code; project owner can disable it in Firebase Console.
+- Firestore rules also check raffle entry mode, schedule, open status and ticket cap when creating an entry; the account must be active/approved. Added Admin-only `pointLedger` access and protected profile lifecycle/points fields.
+- Firestore Rules compiled and deployed to `luckydraw-mksdev` as ruleset `f9161782-e785-4736-8e15-ec6fa5fc46e8`.
+- Final build and GitHub push remain pending for this iteration.
+
+- Final verification: `npm run build` succeeded and `git diff --check` passed. Vite continues to show the known large JavaScript bundle advisory (880.14 kB minified). Firestore Rules are deployed as ruleset `f9161782-e785-4736-8e15-ec6fa5fc46e8`.
+- Published Iteration 6 changes to GitHub `main` after verification; commit `ad0ff49` (`Separate account registration from raffle entry`).
