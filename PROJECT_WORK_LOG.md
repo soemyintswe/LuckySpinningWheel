@@ -313,3 +313,11 @@
 - Move the capacity field outside the restricted block, keep prize/payment terms locked, and retain validation preventing capacity from dropping below approved/pending tickets. Build, deploy, verify live bundle, update this record, and publish the fix.
 
 - Moved the max-chance input outside the restricted prize/payment block, so it is visible and editable after an entry exists. Build and diff checks pass; deployed Hosting and verified HTTP 200 serving index-f2TPzqA2.js. Existing raffle and Firestore data remain unchanged. Published source and log to GitHub `main` at commit `4740544`.
+
+### Iteration 21 — schedule fields hidden and draw countdown requested (2026-10-26)
+
+- User screenshot confirms max chances is now visible and editable but the editor still says open/draw schedule can be edited without displaying those inputs. Source confirms the schedule row remained inside `!editRestricted`, so schedule changes are also impossible after an entry exists.
+- Move the open/draw datetime controls outside the restricted prize/payment block. Preserve current validation and restricted update path, which already writes the schedule fields.
+- User asks to show when the draw happens and a countdown beginning 30 minutes before draw time. Show the local draw date/time on raffle rows; show a live HH:MM:SS countdown in the final 30 minutes and a clear ready state at/after draw time. Update the clock cadence, add compact responsive styles and update user guide. Do not alter existing live raffle schedule. Build, deploy, verify, and publish.
+
+- Moved open/draw time controls outside the restricted block, so Admin can edit the schedule after entries exist; the existing restricted save path persists those values and validates draw time after opening time. Raffle cards now display local draw date/time and a 30-minute live countdown that updates every second, then shows a ready state at draw time. Updated the Burmese guide. Build and diff checks pass; Hosting returns HTTP 200 with index-1mSx2k7E.js and index-DsPab_9M.css. Existing raffle schedule/data were not changed. Published source, user guide and log to GitHub `main` at commit `1dfa584`.
