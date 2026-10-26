@@ -207,3 +207,14 @@
 - Published Iteration 7 source and documentation to GitHub `main` as commit `c9630b4` (`Add winner prize choices and consolation modes`). The Firestore Rules deployment remains pending the authorized CLI account.
 
 - Follow-up: after the user completed Firebase CLI login, switched to `soemyintswe@gmail.com` and deployed the Iteration 7 Firestore Rules successfully. The live prize request flow is now enabled.
+
+### Iteration 8 — Admin recognition and raffle visibility/entry repair (2026-10-26)
+
+- User screenshots show the intended `soemyintswe@gmail.com` account still displays “approval pending”; the raffle dropdown is empty and its action is disabled. User also reports a raffle scheduled to open tonight is no longer visible and cannot be entered.
+- Inspection points to two probable code issues: Admin role is sampled only once at auth start (so an Admin document created afterward is not observed until reload), and `drawLocked` (which freezes prize slot configuration after first spin) is also used to hide/block future entries and approvals. This conflates prize setup locking with raffle entry availability.
+- Planned repair: subscribe to the Admin document live alongside the user profile; keep scheduled/active raffles visible and accept entries/approvals while draw time and ticket caps allow even when prize slots are frozen; preserve `drawLocked` only for prize setup. Verify the current project ID, build, and deploy corrected Firestore Rules after validation.
+- Cloud privilege action: creating `admins/{UID}` grants elevated permissions. The user explicitly approved granting Admin to `soemyintswe@gmail.com`.
+- User approved creating the `admins/{uid}` document for `soemyintswe@gmail.com`. Firebase Authentication lookup resolved this exact account to UID `Wr6vfnoyswRRou81ca97p7CxYXT2`. Direct Firestore REST calls consistently timed out from this environment, so the Admin document could not be created/verified. Manual Console action required: Firestore Database → `admins` collection → create document ID `Wr6vfnoyswRRou81ca97p7CxYXT2`, fields `email` string `soemyintswe@gmail.com`, `role` string `admin`. The user profile should then become Admin automatically via the live listener.
+- Iteration 8 code fixes subscribe to the Admin document live and no longer block raffle entries/entry approvals solely because prize configuration is locked after a spin. `npm run build` succeeded (Vite reports the known JS bundle size advisory). Firestore Rules compiled and deployed successfully to `luckydraw-mksdev`.
+
+- Verification: `npm run build` passed; `git diff --check` passed. Live Rules deployed after Firebase CLI account was selected as `soemyintswe@gmail.com`. Admin profile provisioning is the remaining manual Console action because Firestore REST host connections timed out.
