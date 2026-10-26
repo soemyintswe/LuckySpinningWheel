@@ -335,3 +335,10 @@
 - `npm run build` succeeded (Vite reports the existing large-bundle advisory); `git diff --check` succeeded; Firebase compiled and deployed Firestore Rules and Hosting to `luckydraw-mksdev`; live Hosting returned HTTP 200 and serves `index-Cq0mfaId.js` / `index-fFRpMOop.css`.
 - No raffle, prize, points, participant, or ledger data was changed during deployment. Current project remains on Spark: wheel randomness is chosen in the client and enforced for eligibility/slot uniqueness by Firestore Rules, so it should not be used as a regulated or high-value lottery without server-side trusted randomness.
 - Published implementation to GitHub main at commit `5af2279` (2026-10-26).
+
+### Iteration 23 — clarify the non-functional workspace dropdown (2026-10-26)
+
+- User asks what the sidebar "မဲစီမံခန့်ခွဲမှု" label and down arrow do; clicking has no effect.
+- Source inspection shows it is a static `.workspace` div with a decorative `ChevronDown`; there is no workspace-switching state or action. The arrow falsely suggests the user can select another workspace.
+- Remove the decorative arrow and keep the area as a clear static label. Build, deploy Hosting, verify the live app, and publish the change. No Firebase data or rules changes are needed.
+- Removed the fake dropdown chevron; the static workspace label now has a descriptive title. `npm run build` and `git diff --check` passed, Hosting was deployed, and the live page returned HTTP 200 with bundle `index-sI1JZMW-.js`. No rules or Firestore data changed.
