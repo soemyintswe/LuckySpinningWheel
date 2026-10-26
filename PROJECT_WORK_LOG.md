@@ -334,3 +334,4 @@
 - Updated `docs/USER_GUIDE_MY.md` with the meaning of the counts, ticket and points policies, wheel modes, and live winner behavior.
 - `npm run build` succeeded (Vite reports the existing large-bundle advisory); `git diff --check` succeeded; Firebase compiled and deployed Firestore Rules and Hosting to `luckydraw-mksdev`; live Hosting returned HTTP 200 and serves `index-Cq0mfaId.js` / `index-fFRpMOop.css`.
 - No raffle, prize, points, participant, or ledger data was changed during deployment. Current project remains on Spark: wheel randomness is chosen in the client and enforced for eligibility/slot uniqueness by Firestore Rules, so it should not be used as a regulated or high-value lottery without server-side trusted randomness.
+- Published implementation to GitHub main at commit `5af2279` (2026-10-26).
